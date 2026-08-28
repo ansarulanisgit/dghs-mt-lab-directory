@@ -1,0 +1,65 @@
+name: Weekly MT-Lab Scraper (Every Sunday)
+
+on:
+  schedule:
+    # Runs every 7 days on Sunday at 00:00 UTC (06:00 AM BST)
+    - cron: '0 0 * * 0'
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: 'Optional limit of records to scrape for testing (leave empty for all ~2,506)'
+        required: false
+        default: ''
+      concurrency:
+        description: 'Number of concurrent workers (default: 8)'
+        required: false
+        default: '8'
+
+jobs:
+  scrape-and-sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: scraper/package-lock.json
+
+      - name: Install Dependencies
+        working-directory: scraper
+        run: npm ci || npm install
+
+      - name: Install Playwright Browsers & OS Dependencies
+        working-directory: scraper
+        run: npx playwright install --with-deps chromium
+
+      - name: Run High-Speed Scraper
+        working-directory: scraper
+        env:
+          HRM_USERNAME: ${{ secrets.HRM_USERNAME }}
+          HRM_PASSWORD: ${{ secrets.HRM_PASSWORD }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          ARGS="--concurrency=${{ github.event.inputs.concurrency || '8' }}"
+          if [ -n "${{ github.event.inputs.limit }}" ]; then
+            ARGS="$ARGS --limit=${{ github.event.inputs.limit }}"
+          fi
+          echo "Executing scraper with arguments: $ARGS"
+          node index.js $ARGS
+
+      - name: Upload Scraped Records Artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dghs-mt-lab-scraped-data
+          path: |
+            scraper/scraped_records.json
+            scraper/failed_providers.json
+          if-no-files-found: ignore

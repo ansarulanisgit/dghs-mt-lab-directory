@@ -1,0 +1,10 @@
+{
+  "name": "dghs-scraper",
+  "version": "1.0.0",
+  "type": "module",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.48.1",
+    "dotenv": "^16.4.7",
+    "playwright": "^1.50.1"
+  }
+}
