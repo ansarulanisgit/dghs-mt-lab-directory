@@ -460,43 +460,49 @@ export default function App() {
             </div>
           </div>
 
-          {/* User Badge, Countdown, Settings & Sync Status */}
-          <div className="flex flex-wrap items-center gap-2 self-end sm:self-auto">
-            {/* Live Countdown Badge in Top Header */}
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold shadow-2xs">
-              <Timer className="w-3.5 h-3.5 text-emerald-600 animate-pulse" />
-              <span>Next Update In: <strong className="font-mono font-bold text-emerald-900">{countdownText || 'Calculating...'}</strong></span>
+          {/* Header Actions: 2 clean rows on mobile, 1 flexible row on desktop */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
+            {/* Row 1 on mobile: Next Update In & Last Updated in one row */}
+            <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap justify-between sm:justify-start">
+              {/* Live Countdown Badge in Top Header */}
+              <div className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] sm:text-xs font-semibold shadow-2xs shrink-0">
+                <Timer className="w-3.5 h-3.5 text-emerald-600 animate-pulse" />
+                <span>Next Update In: <strong className="font-mono font-bold text-emerald-900">{countdownText || 'Calculating...'}</strong></span>
+              </div>
+
+              {/* Last Updated Badge (Only Date, No Time) */}
+              <div className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-full bg-slate-100 border border-slate-200 text-slate-700 text-[11px] sm:text-xs font-medium shrink-0">
+                <Clock className="w-3.5 h-3.5 text-emerald-600" />
+                <span>Last Updated: <strong className="font-semibold text-slate-900">{formatTimestamp(metadata?.last_run_at)}</strong></span>
+              </div>
             </div>
 
-            {/* Last Updated Badge (Only Date, No Time) */}
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 border border-slate-200 text-slate-700 text-xs font-medium">
-              <Clock className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Last Updated: <strong className="font-semibold text-slate-900">{formatTimestamp(metadata?.last_run_at)}</strong></span>
+            {/* Row 2 on mobile: User Pill, Settings & Logout */}
+            <div className="flex items-center justify-end gap-2 shrink-0">
+              {/* Current User Pill */}
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 border border-slate-200 text-slate-800 text-xs font-semibold">
+                <User className="w-3 h-3 text-emerald-600" />
+                <span>{currentUser.name}</span>
+              </div>
+
+              {/* Password-Protected Settings Button */}
+              <button
+                onClick={() => setSettingsOpen(true)}
+                className="p-1.5 sm:p-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 hover:text-emerald-700 text-slate-600 transition-colors cursor-pointer shadow-2xs"
+                title="System & Scraper Settings (Password Protected)"
+              >
+                <Settings className="w-4 h-4" />
+              </button>
+
+              {/* Logout Button */}
+              <button
+                onClick={handleLogout}
+                className="p-1.5 sm:p-2 rounded-xl border border-slate-200 bg-white hover:bg-rose-50 hover:text-rose-700 hover:border-rose-200 text-slate-600 transition-colors cursor-pointer shadow-2xs"
+                title="Sign Out"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
             </div>
-
-            {/* Current User Pill */}
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 border border-slate-200 text-slate-800 text-xs font-semibold">
-              <User className="w-3 h-3 text-emerald-600" />
-              <span>{currentUser.name}</span>
-            </div>
-
-            {/* Password-Protected Settings Button */}
-            <button
-              onClick={() => setSettingsOpen(true)}
-              className="p-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 hover:text-emerald-700 text-slate-600 transition-colors cursor-pointer shadow-2xs"
-              title="System & Scraper Settings (Password Protected)"
-            >
-              <Settings className="w-4 h-4" />
-            </button>
-
-            {/* Logout Button */}
-            <button
-              onClick={handleLogout}
-              className="p-2 rounded-xl border border-slate-200 bg-white hover:bg-rose-50 hover:text-rose-700 hover:border-rose-200 text-slate-600 transition-colors cursor-pointer shadow-2xs"
-              title="Sign Out"
-            >
-              <LogOut className="w-4 h-4" />
-            </button>
           </div>
         </div>
       </header>
