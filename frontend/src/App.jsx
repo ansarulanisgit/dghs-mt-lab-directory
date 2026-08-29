@@ -475,7 +475,7 @@ export default function App() {
             </div>
             <div>
               <h1 className="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight">
-                {appConfig.appTitle || 'DGHS MT-Lab Directory'}
+                {appConfig.appTitle || 'DGHS MT Lab Directory'}
               </h1>
               <p className="text-xs text-slate-500 font-medium">
                 {appConfig.appSubtitle || 'Central Directory of Medical Technologist (Lab)'}
@@ -762,7 +762,7 @@ export default function App() {
 
       {/* Footer */}
       <footer className="mt-auto border-t border-slate-200 bg-white py-4 text-center text-xs text-slate-500 font-medium px-4">
-        {appConfig.footerText || 'DGHS Medical Technologist (Lab) Personnel Directory • Developed By Ansarul Anis'}
+        {appConfig.footerText || 'DGHS MT (Lab) Directory | Developed By Ansarul Anis'}
       </footer>
 
       {/* Floating Circular Back to Top Button (Transparent Frosted Green Glassmorphism with Theme Gradient) */}

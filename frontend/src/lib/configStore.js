@@ -11,9 +11,9 @@ export const DEFAULT_CONFIG = {
     'https://hrm.dghs.gov.bd/postings/create?provider_id=194744'
   ],
   scheduleIntervalDays: 7, // Configurable interval in days
-  appTitle: 'DGHS MT-Lab Directory',
+  appTitle: 'DGHS MT Lab Directory',
   appSubtitle: 'Central Directory of Medical Technologist (Lab)',
-  footerText: 'DGHS Medical Technologist (Lab) Personnel Directory • Developed By Ansarul Anis',
+  footerText: 'DGHS MT (Lab) Directory | Developed By Ansarul Anis',
   designatedSearchQuery: 'Medical Technologist (Lab)',
   adminEmail: 'ansarul.contact@gmail.com',
   adminPassword: 'Ansarul@233'
