@@ -27,6 +27,15 @@ export default function SettingsModal({ currentUser, onClose, onForceUpdate, dyn
   // Config State
   const [config, setConfig] = useState(getSystemConfig());
   const [configSavedNotice, setConfigSavedNotice] = useState('');
+  const [isConfigSaved, setIsConfigSaved] = useState(false);
+
+  // Global Floating Toast Notification State
+  const [toastMessage, setToastMessage] = useState(null); // { text: '', type: 'success' | 'error' | 'info' }
+
+  const triggerToast = (text, type = 'success') => {
+    setToastMessage({ text, type });
+    setTimeout(() => setToastMessage(null), 4000);
+  };
 
   // Backup & Restore State (Keep last 2 update data in store)
   const [backupsList, setBackupsList] = useState(getBackups());
@@ -79,8 +88,13 @@ export default function SettingsModal({ currentUser, onClose, onForceUpdate, dyn
   const handleSaveConfig = (e) => {
     if (e) e.preventDefault();
     saveSystemConfig(config);
+    setIsConfigSaved(true);
+    triggerToast('Settings & Configuration saved successfully!', 'success');
     setConfigSavedNotice('Configuration saved successfully!');
-    setTimeout(() => setConfigSavedNotice(''), 3000);
+    setTimeout(() => {
+      setIsConfigSaved(false);
+      setConfigSavedNotice('');
+    }, 3500);
   };
 
   const handleIntervalChange = (days) => {
@@ -88,6 +102,7 @@ export default function SettingsModal({ currentUser, onClose, onForceUpdate, dyn
     const updated = { ...config, scheduleIntervalDays: newDays };
     setConfig(updated);
     saveSystemConfig(updated);
+    triggerToast(`Automatic update schedule updated to every ${newDays} ${newDays === 1 ? 'day' : 'days'}.`, 'success');
     setUpdateNotice(`Automatic update schedule set to every ${newDays} ${newDays === 1 ? 'day' : 'days'}.`);
     setTimeout(() => setUpdateNotice(''), 3500);
   };
@@ -96,6 +111,7 @@ export default function SettingsModal({ currentUser, onClose, onForceUpdate, dyn
     if (window.confirm('Reset all scraper and portal settings to default values?')) {
       const def = resetSystemConfig();
       setConfig(def);
+      triggerToast('Configuration reset to default settings.', 'info');
       setConfigSavedNotice('Reset to default configuration.');
       setTimeout(() => setConfigSavedNotice(''), 3000);
     }
@@ -115,9 +131,11 @@ export default function SettingsModal({ currentUser, onClose, onForceUpdate, dyn
       if (onForceUpdate) {
         await onForceUpdate();
       }
+      triggerToast('Dataset and directory stats successfully updated & synchronized!', 'success');
       setUpdateNotice('Dataset and directory stats successfully updated & synchronized!');
       setTimeout(() => setUpdateNotice(''), 4000);
     } catch (err) {
+      triggerToast('Update error: ' + err.message, 'error');
       setUpdateNotice('Update error: ' + err.message);
     } finally {
       setIsUpdating(false);
@@ -152,10 +170,11 @@ export default function SettingsModal({ currentUser, onClose, onForceUpdate, dyn
       setRestoringBackupId(backupId);
       const restored = restoreBackupById(backupId);
       setActiveBackupOverride(restored);
+      triggerToast(`Restored "${restored.label}" (${restored.recordCount} records).`, 'success');
       setUpdateNotice(`Successfully restored "${restored.label}" (${restored.recordCount} records). Directory view is now displaying this version.`);
       setTimeout(() => setUpdateNotice(''), 4500);
     } catch (err) {
-      alert('Failed to restore backup: ' + err.message);
+      triggerToast('Failed to restore backup: ' + err.message, 'error');
     } finally {
       setRestoringBackupId(null);
     }
@@ -164,6 +183,7 @@ export default function SettingsModal({ currentUser, onClose, onForceUpdate, dyn
   const handleClearOverride = () => {
     clearBackupOverride();
     setActiveBackupOverride(null);
+    triggerToast('Switched back to latest active dataset.', 'info');
     setUpdateNotice('Switched back to latest active dataset.');
     setTimeout(() => setUpdateNotice(''), 3500);
   };
@@ -172,6 +192,7 @@ export default function SettingsModal({ currentUser, onClose, onForceUpdate, dyn
     if (onManualSnapshot) {
       onManualSnapshot();
       setBackupsList(getBackups());
+      triggerToast('Manual backup snapshot created and saved in store.', 'success');
       setUpdateNotice('Manual backup snapshot created and saved in store.');
       setTimeout(() => setUpdateNotice(''), 3500);
     }
@@ -192,9 +213,11 @@ export default function SettingsModal({ currentUser, onClose, onForceUpdate, dyn
       if (editingUserId) {
         updateUser(editingUserId, userForm);
         setUserFormSuccess('User updated successfully!');
+        triggerToast('User account updated successfully!', 'success');
       } else {
         addUser(userForm);
         setUserFormSuccess('New user added successfully!');
+        triggerToast('New user added successfully!', 'success');
       }
       setUserList(getUsers());
       setTimeout(() => {
@@ -211,8 +234,9 @@ export default function SettingsModal({ currentUser, onClose, onForceUpdate, dyn
       try {
         deleteUser(user.id);
         setUserList(getUsers());
+        triggerToast(`User "${user.name}" deleted.`, 'info');
       } catch (err) {
-        alert(err.message);
+        triggerToast(err.message, 'error');
       }
     }
   };
@@ -220,9 +244,37 @@ export default function SettingsModal({ currentUser, onClose, onForceUpdate, dyn
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-slate-950/70 backdrop-blur-sm animate-in fade-in duration-200">
       <div 
-        className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full overflow-hidden border border-slate-200 flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200"
+        className="relative bg-white rounded-3xl shadow-2xl max-w-2xl w-full overflow-hidden border border-slate-200 flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Floating Top Notification Toast (Always Stays Visible on Screen) */}
+        {toastMessage && (
+          <div className="absolute top-20 left-1/2 -translate-x-1/2 z-50 w-11/12 max-w-md animate-in fade-in slide-in-from-top-3 duration-200 pointer-events-auto">
+            <div className={`p-3.5 rounded-2xl shadow-2xl border flex items-center justify-between gap-3 text-xs font-bold ${
+              toastMessage.type === 'success'
+                ? 'bg-emerald-700 text-white border-emerald-500 shadow-emerald-900/40'
+                : toastMessage.type === 'error'
+                ? 'bg-rose-700 text-white border-rose-500 shadow-rose-900/40'
+                : 'bg-slate-900 text-white border-slate-700 shadow-black/50'
+            }`}>
+              <div className="flex items-center gap-2.5">
+                {toastMessage.type === 'success' ? (
+                  <CheckCircle2 className="w-5 h-5 shrink-0 text-emerald-200" />
+                ) : (
+                  <AlertCircle className="w-5 h-5 shrink-0 text-white" />
+                )}
+                <span>{toastMessage.text}</span>
+              </div>
+              <button
+                onClick={() => setToastMessage(null)}
+                className="p-1 rounded-lg hover:bg-white/20 text-white/80 hover:text-white transition-colors cursor-pointer"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Spacious Header with Greenish Gradient */}
         <div className="bg-gradient-to-r from-emerald-800 via-teal-800 to-slate-900 px-6 sm:px-8 py-5 sm:py-6 text-white flex items-center justify-between shrink-0 border-b border-emerald-700/40">
           <div className="flex items-center gap-4">
@@ -459,10 +511,23 @@ export default function SettingsModal({ currentUser, onClose, onForceUpdate, dyn
 
                     <button
                       type="submit"
-                      className="px-4 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl flex items-center gap-1.5 transition-colors shadow-sm cursor-pointer"
+                      className={`px-4 py-2 text-xs font-bold rounded-xl flex items-center gap-1.5 transition-all shadow-sm cursor-pointer ${
+                        isConfigSaved
+                          ? 'bg-emerald-800 text-white ring-2 ring-emerald-400'
+                          : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                      }`}
                     >
-                      <Save className="w-3.5 h-3.5" />
-                      Save Configuration
+                      {isConfigSaved ? (
+                        <>
+                          <Check className="w-3.5 h-3.5 text-emerald-200" />
+                          <span>Saved Successfully!</span>
+                        </>
+                      ) : (
+                        <>
+                          <Save className="w-3.5 h-3.5" />
+                          <span>Save Configuration</span>
+                        </>
+                      )}
                     </button>
                   </div>
                 </form>
