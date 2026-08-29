@@ -53,7 +53,91 @@ export function setCurrentUser(user) {
   }
 }
 
+export const MAX_LOGIN_ATTEMPTS = 3;
+export const LOCKOUT_DURATION_MS = 6 * 60 * 60 * 1000; // 6 hours in milliseconds (21,600,000 ms)
+const STORAGE_LOCKOUT_KEY = 'dghs_auth_lockout_v1';
+
+export function getLockoutState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_LOCKOUT_KEY);
+    if (!raw) return { failedAttempts: 0, lockoutUntil: null, isLocked: false, remainingSeconds: 0 };
+    const data = JSON.parse(raw);
+    const now = Date.now();
+
+    if (data.lockoutUntil && data.lockoutUntil > now) {
+      const remainingSeconds = Math.ceil((data.lockoutUntil - now) / 1000);
+      return {
+        failedAttempts: data.failedAttempts || MAX_LOGIN_ATTEMPTS,
+        lockoutUntil: data.lockoutUntil,
+        isLocked: true,
+        remainingSeconds
+      };
+    }
+
+    // Lockout expired -> automatically reset
+    if (data.lockoutUntil && data.lockoutUntil <= now) {
+      clearLockoutState();
+      return { failedAttempts: 0, lockoutUntil: null, isLocked: false, remainingSeconds: 0 };
+    }
+
+    return {
+      failedAttempts: data.failedAttempts || 0,
+      lockoutUntil: null,
+      isLocked: false,
+      remainingSeconds: 0
+    };
+  } catch {
+    return { failedAttempts: 0, lockoutUntil: null, isLocked: false, remainingSeconds: 0 };
+  }
+}
+
+export function recordFailedLoginAttempt() {
+  const current = getLockoutState();
+  const nextAttempts = (current.failedAttempts || 0) + 1;
+  const now = Date.now();
+
+  if (nextAttempts >= MAX_LOGIN_ATTEMPTS) {
+    const lockoutUntil = now + LOCKOUT_DURATION_MS;
+    const payload = { failedAttempts: nextAttempts, lockoutUntil };
+    localStorage.setItem(STORAGE_LOCKOUT_KEY, JSON.stringify(payload));
+    return {
+      isLocked: true,
+      failedAttempts: nextAttempts,
+      remainingAttempts: 0,
+      lockoutUntil,
+      remainingSeconds: Math.ceil(LOCKOUT_DURATION_MS / 1000)
+    };
+  } else {
+    const payload = { failedAttempts: nextAttempts, lockoutUntil: null };
+    localStorage.setItem(STORAGE_LOCKOUT_KEY, JSON.stringify(payload));
+    return {
+      isLocked: false,
+      failedAttempts: nextAttempts,
+      remainingAttempts: MAX_LOGIN_ATTEMPTS - nextAttempts,
+      lockoutUntil: null,
+      remainingSeconds: 0
+    };
+  }
+}
+
+export function clearLockoutState() {
+  localStorage.removeItem(STORAGE_LOCKOUT_KEY);
+}
+
 export function loginUser(identifier, password) {
+  // Check if device is currently locked out
+  const lockout = getLockoutState();
+  if (lockout.isLocked) {
+    return {
+      success: false,
+      isLocked: true,
+      failedAttempts: lockout.failedAttempts,
+      lockoutUntil: lockout.lockoutUntil,
+      remainingSeconds: lockout.remainingSeconds,
+      error: `Device is temporarily blocked for 6 hours due to ${MAX_LOGIN_ATTEMPTS} failed attempts.`
+    };
+  }
+
   const users = getUsers();
   const cleanId = (identifier || '').trim().toLowerCase();
   const cleanPass = (password || '').trim();
@@ -64,6 +148,7 @@ export function loginUser(identifier, password) {
   );
 
   if (matched) {
+    clearLockoutState(); // Reset attempt counter on success
     const sessionData = {
       id: matched.id,
       name: matched.name,
@@ -75,7 +160,19 @@ export function loginUser(identifier, password) {
     return { success: true, user: sessionData };
   }
 
-  return { success: false, error: 'Invalid username/email or password.' };
+  // Record failed login attempt
+  const attemptResult = recordFailedLoginAttempt();
+  return {
+    success: false,
+    isLocked: attemptResult.isLocked,
+    failedAttempts: attemptResult.failedAttempts,
+    remainingAttempts: attemptResult.remainingAttempts,
+    lockoutUntil: attemptResult.lockoutUntil,
+    remainingSeconds: attemptResult.remainingSeconds,
+    error: attemptResult.isLocked
+      ? `Maximum ${MAX_LOGIN_ATTEMPTS} failed attempts reached! Device is now blocked for 6 hours.`
+      : `Invalid username or password. (Attempt ${attemptResult.failedAttempts} of ${MAX_LOGIN_ATTEMPTS} — ${attemptResult.remainingAttempts} ${attemptResult.remainingAttempts === 1 ? 'attempt' : 'attempts'} remaining before 6-hour lockout)`
+  };
 }
 
 export function logoutUser() {
