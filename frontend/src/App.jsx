@@ -462,8 +462,8 @@ export default function App() {
 
           {/* Header Actions: On mobile -> Row 1: (Last Updated, User, Settings, Logout), Row 2: (Next Update In) */}
           <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
-            {/* On mobile: Row 2 (Next Update In) | On desktop: First in row */}
-            <div className="inline-flex items-center justify-center sm:justify-start gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold shadow-2xs w-full sm:w-auto shrink-0">
+            {/* On mobile: Row 2 (Next Update In - content width) | On desktop: First in row */}
+            <div className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] sm:text-xs font-semibold shadow-2xs w-fit self-start sm:self-auto shrink-0">
               <Timer className="w-3.5 h-3.5 text-emerald-600 animate-pulse" />
               <span>Next Update In: <strong className="font-mono font-bold text-emerald-900">{countdownText || 'Calculating...'}</strong></span>
             </div>
