@@ -460,8 +460,8 @@ export default function App() {
             </div>
           </div>
 
-          {/* Header Actions: On mobile -> Row 1: (Last Updated, User, Settings, Logout), Row 2: (Next Update In) */}
-          <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
+          {/* Header Actions Card: Styled as a clean card on mobile with space above */}
+          <div className="mt-3 sm:mt-0 w-full sm:w-auto bg-slate-50/80 sm:bg-transparent border border-slate-200/80 sm:border-transparent rounded-2xl p-3 sm:p-0 shadow-2xs sm:shadow-none flex flex-col-reverse sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-2">
             {/* On mobile: Row 2 (Next Update In - content width) | On desktop: First in row */}
             <div className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] sm:text-xs font-semibold shadow-2xs w-fit self-start sm:self-auto shrink-0">
               <Timer className="w-3.5 h-3.5 text-emerald-600 animate-pulse" />
@@ -471,7 +471,7 @@ export default function App() {
             {/* On mobile: Row 1 (Last Updated, User, Settings, Logout in single row) | On desktop: Follows Next Update In */}
             <div className="flex items-center justify-between sm:justify-start gap-1.5 sm:gap-2 w-full sm:w-auto">
               {/* Last Updated Badge */}
-              <div className="inline-flex items-center gap-1.5 px-2 sm:px-2.5 py-1 rounded-full bg-slate-100 border border-slate-200 text-slate-700 text-[11px] sm:text-xs font-medium shrink-0">
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white sm:bg-slate-100 border border-slate-200 text-slate-700 text-[11px] sm:text-xs font-medium shadow-2xs sm:shadow-none shrink-0">
                 <Clock className="w-3.5 h-3.5 text-emerald-600" />
                 <span>Last Updated: <strong className="font-semibold text-slate-900">{formatTimestamp(metadata?.last_run_at)}</strong></span>
               </div>
@@ -479,7 +479,7 @@ export default function App() {
               {/* User Actions Group (User pill, Settings, Logout) */}
               <div className="flex items-center gap-1.5 shrink-0">
                 {/* Current User Pill */}
-                <div className="inline-flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-full bg-slate-100 border border-slate-200 text-slate-800 text-[11px] sm:text-xs font-semibold">
+                <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white sm:bg-slate-100 border border-slate-200 text-slate-800 text-[11px] sm:text-xs font-semibold shadow-2xs sm:shadow-none">
                   <User className="w-3 h-3 text-emerald-600" />
                   <span>{currentUser.name}</span>
                 </div>
