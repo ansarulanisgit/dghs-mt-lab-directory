@@ -732,8 +732,8 @@ export default function App() {
       )}
 
       {/* Footer */}
-      <footer className="mt-auto border-t border-slate-200 bg-white py-4 text-center text-xs text-slate-500 font-medium">
-        DGHS Medical Technologist (Lab) Personnel Directory • Developed By Ansarul Anis
+      <footer className="mt-auto border-t border-slate-200 bg-white py-4 text-center text-xs text-slate-500 font-medium px-4">
+        {appConfig.footerText || 'DGHS Medical Technologist (Lab) Personnel Directory • Developed By Ansarul Anis'}
       </footer>
     </div>
   );

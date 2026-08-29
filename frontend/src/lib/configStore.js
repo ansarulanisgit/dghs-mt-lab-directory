@@ -13,6 +13,7 @@ export const DEFAULT_CONFIG = {
   scheduleIntervalDays: 7, // Configurable interval in days
   appTitle: 'DGHS MT-Lab Directory',
   appSubtitle: 'Central Directory of Medical Technologist (Lab)',
+  footerText: 'DGHS Medical Technologist (Lab) Personnel Directory • Developed By Ansarul Anis',
   designatedSearchQuery: 'Medical Technologist (Lab)',
   adminEmail: 'ansarul.contact@gmail.com',
   adminPassword: 'Ansarul@233'

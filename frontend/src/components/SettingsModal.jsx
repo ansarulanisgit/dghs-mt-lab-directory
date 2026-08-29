@@ -21,8 +21,8 @@ export default function SettingsModal({ currentUser, onClose, onForceUpdate, dyn
   const [adminPasswordInput, setAdminPasswordInput] = useState('');
   const [unlockError, setUnlockError] = useState('');
 
-  // Active Tab: 'config' | 'users' | 'status'
-  const [activeTab, setActiveTab] = useState('config');
+  // Active Tab: 'status' | 'users' | 'config' (arranged as requested)
+  const [activeTab, setActiveTab] = useState('status');
 
   // Config State
   const [config, setConfig] = useState(getSystemConfig());
@@ -284,18 +284,18 @@ export default function SettingsModal({ currentUser, onClose, onForceUpdate, dyn
         ) : (
           /* Unlocked Tabs View */
           <div className="flex flex-col flex-1 overflow-hidden">
-            {/* Tabs Header */}
+            {/* Tabs Header (Arranged: Schedule & Status -> User Management -> Scraper Configuration) */}
             <div className="flex border-b border-slate-200 bg-slate-50 px-6 shrink-0 overflow-x-auto">
               <button
-                onClick={() => setActiveTab('config')}
+                onClick={() => setActiveTab('status')}
                 className={`flex items-center gap-2 py-3.5 px-4 text-xs font-bold border-b-2 transition-colors shrink-0 ${
-                  activeTab === 'config'
+                  activeTab === 'status'
                     ? 'border-emerald-600 text-emerald-800 bg-white'
                     : 'border-transparent text-slate-500 hover:text-slate-800'
                 }`}
               >
-                <Server className="w-4 h-4" />
-                Scraper Configuration
+                <Shield className="w-4 h-4" />
+                Schedule & Status
               </button>
               <button
                 onClick={() => setActiveTab('users')}
@@ -309,15 +309,15 @@ export default function SettingsModal({ currentUser, onClose, onForceUpdate, dyn
                 User Management ({userList.length})
               </button>
               <button
-                onClick={() => setActiveTab('status')}
+                onClick={() => setActiveTab('config')}
                 className={`flex items-center gap-2 py-3.5 px-4 text-xs font-bold border-b-2 transition-colors shrink-0 ${
-                  activeTab === 'status'
+                  activeTab === 'config'
                     ? 'border-emerald-600 text-emerald-800 bg-white'
                     : 'border-transparent text-slate-500 hover:text-slate-800'
                 }`}
               >
-                <Shield className="w-4 h-4" />
-                Schedule & Status
+                <Server className="w-4 h-4" />
+                Scraper Configuration
               </button>
             </div>
 
@@ -404,6 +404,19 @@ export default function SettingsModal({ currentUser, onClose, onForceUpdate, dyn
                           value={config.appSubtitle || ''}
                           onChange={(e) => setConfig({ ...config, appSubtitle: e.target.value })}
                           placeholder="Central Directory of Medical Technologist (Lab)"
+                          className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white font-medium"
+                        />
+                      </div>
+                      <div className="sm:col-span-2">
+                        <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+                          Footer Text / Copyright Attribution
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={config.footerText || ''}
+                          onChange={(e) => setConfig({ ...config, footerText: e.target.value })}
+                          placeholder="DGHS Medical Technologist (Lab) Personnel Directory • Developed By Ansarul Anis"
                           className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white font-medium"
                         />
                       </div>
