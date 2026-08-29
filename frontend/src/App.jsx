@@ -70,6 +70,7 @@ export default function App() {
   const [selectedUpazila, setSelectedUpazila] = useState('');
   const [selectedGender, setSelectedGender] = useState('');
   const [selectedStatus, setSelectedStatus] = useState(''); // '' | 'Filled' | 'Vacant'
+  const [hidePastPRL, setHidePastPRL] = useState(false); // Toggle to hide past PRL dates
 
   // Default Sorting: PRL Date (Earliest first)
   const [sortBy, setSortBy] = useState('prl_date');
@@ -177,6 +178,7 @@ export default function App() {
     setSelectedUpazila('');
     setSelectedGender('');
     setSelectedStatus('');
+    setHidePastPRL(false);
     setSortBy('prl_date');
     setSortOrder('asc');
     setCurrentPage(1);
@@ -190,8 +192,9 @@ export default function App() {
     if (selectedDistrict) count++;
     if (selectedUpazila) count++;
     if (selectedGender) count++;
+    if (hidePastPRL) count++;
     return count;
-  }, [debouncedSearch, selectedStatus, selectedDivision, selectedDistrict, selectedUpazila, selectedGender]);
+  }, [debouncedSearch, selectedStatus, selectedDivision, selectedDistrict, selectedUpazila, selectedGender, hidePastPRL]);
 
   // Fetch metadata on mount
   const fetchMetadata = useCallback(async () => {
@@ -274,7 +277,19 @@ export default function App() {
         filtered = filtered.filter(s => (s.gender || '').toLowerCase() === selectedGender.toLowerCase());
       }
 
-      // 7. Robust Sorting
+      // 7. Hide Past PRL Filter (Reference: Today's date YYYY-MM-DD)
+      if (hidePastPRL) {
+        const todayStr = new Date().toISOString().split('T')[0];
+        filtered = filtered.filter(s => {
+          if (!s.prl_date) {
+            return s.status === 'Vacant';
+          }
+          const itemDate = s.prl_date.split('T')[0];
+          return itemDate >= todayStr;
+        });
+      }
+
+      // 8. Robust Sorting
       filtered.sort((a, b) => {
         if (sortBy === 'prl_date') {
           const valA = a.prl_date || '';
@@ -330,6 +345,10 @@ export default function App() {
       if (selectedDistrict) query = query.ilike('district', selectedDistrict);
       if (selectedUpazila) query = query.ilike('upazila', selectedUpazila);
       if (selectedGender) query = query.ilike('gender', selectedGender);
+      if (hidePastPRL) {
+        const todayStr = new Date().toISOString().split('T')[0];
+        query = query.gte('prl_date', todayStr);
+      }
 
       const isAsc = sortOrder === 'asc';
       query = query.order(sortBy, { ascending: isAsc, nullsFirst: false });
@@ -354,6 +373,10 @@ export default function App() {
       if (selectedDistrict) allQuery = allQuery.ilike('district', selectedDistrict);
       if (selectedUpazila) allQuery = allQuery.ilike('upazila', selectedUpazila);
       if (selectedGender) allQuery = allQuery.ilike('gender', selectedGender);
+      if (hidePastPRL) {
+        const todayStr = new Date().toISOString().split('T')[0];
+        allQuery = allQuery.gte('prl_date', todayStr);
+      }
       allQuery = allQuery.order(sortBy, { ascending: isAsc, nullsFirst: false });
       const { data: allData } = await allQuery;
       setAllFilteredStaff(allData || data || []);
@@ -374,6 +397,7 @@ export default function App() {
     selectedDistrict,
     selectedUpazila,
     selectedGender,
+    hidePastPRL,
     sortBy,
     sortOrder,
     currentPage
@@ -626,6 +650,11 @@ export default function App() {
           onGenderChange={handleGenderChange}
           selectedStatus={selectedStatus}
           onStatusChange={handleStatusChange}
+          hidePastPRL={hidePastPRL}
+          onHidePastPRLChange={(val) => {
+            setHidePastPRL(val);
+            setCurrentPage(1);
+          }}
           sortBy={sortBy}
           sortOrder={sortOrder}
           onSortChange={handleSortChange}
