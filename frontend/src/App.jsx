@@ -15,7 +15,7 @@ import SettingsModal from './components/SettingsModal';
 import LoginScreen from './components/LoginScreen';
 import {
   Users, Clock, Settings, LogOut, AlertCircle, RefreshCw, Layers, User, FileDown, Timer,
-  AlertTriangle, Info, X, ShieldAlert, CheckCircle2
+  AlertTriangle, Info, X, ShieldAlert, CheckCircle2, ChevronUp
 } from 'lucide-react';
 
 const PAGE_SIZE = 100; // 100 items per page
@@ -24,6 +24,29 @@ export default function App() {
   // Authentication State
   const [currentUser, setCurrentUser] = useState(getCurrentUser());
   const [settingsOpen, setSettingsOpen] = useState(false);
+
+  // Back to top floating button state (scroll threshold: 400px)
+  const [showBackToTop, setShowBackToTop] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 400) {
+        setShowBackToTop(true);
+      } else {
+        setShowBackToTop(false);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+  };
 
   // Directory Data State
   const [staffList, setStaffList] = useState([]);
@@ -741,6 +764,18 @@ export default function App() {
       <footer className="mt-auto border-t border-slate-200 bg-white py-4 text-center text-xs text-slate-500 font-medium px-4">
         {appConfig.footerText || 'DGHS Medical Technologist (Lab) Personnel Directory • Developed By Ansarul Anis'}
       </footer>
+
+      {/* Floating Circular Back to Top Button (Transparent Frosted Glassmorphism with Theme Gradient) */}
+      {showBackToTop && (
+        <button
+          onClick={scrollToTop}
+          aria-label="Back to top"
+          title="Back to top"
+          className="fixed bottom-5 right-5 sm:bottom-7 sm:right-7 z-40 w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-gradient-to-tr from-emerald-600/75 to-teal-600/60 hover:from-emerald-500/90 hover:to-teal-500/80 backdrop-blur-xl backdrop-saturate-150 text-white flex items-center justify-center shadow-lg shadow-emerald-950/20 hover:shadow-xl hover:shadow-emerald-600/30 border border-white/40 hover:border-white/70 ring-1 ring-emerald-300/30 hover:ring-2 hover:ring-emerald-400/50 transition-all duration-300 transform hover:-translate-y-1 active:scale-95 cursor-pointer animate-in fade-in zoom-in-75"
+        >
+          <ChevronUp className="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.5] drop-shadow-xs" />
+        </button>
+      )}
     </div>
   );
 }
