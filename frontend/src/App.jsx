@@ -91,10 +91,14 @@ export default function App() {
     return () => window.removeEventListener('dghs_backup_restored', handleRestoreEvent);
   }, []);
 
-  // Live Countdown based on configured interval days
+  // System & Branding Config State
+  const [appConfig, setAppConfig] = useState(getSystemConfig());
+
+  // Live Countdown based on configured interval days & dynamic config
   useEffect(() => {
     function updateCountdown() {
       const config = getSystemConfig();
+      setAppConfig(config);
       const text = calculateTimeRemaining(config.scheduleIntervalDays || 7);
       setCountdownText(text);
     }
@@ -417,9 +421,10 @@ export default function App() {
   const formatTimestamp = (ts) => {
     if (!ts) return 'Live';
     try {
-      return new Date(ts).toLocaleString('en-GB', {
-        dateStyle: 'medium',
-        timeStyle: 'short'
+      return new Date(ts).toLocaleDateString('en-GB', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric'
       });
     } catch {
       return ts;
@@ -447,10 +452,10 @@ export default function App() {
             </div>
             <div>
               <h1 className="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight">
-                DGHS MT-Lab Directory
+                {appConfig.appTitle || 'DGHS MT-Lab Directory'}
               </h1>
               <p className="text-xs text-slate-500 font-medium">
-                Central Directory of Medical Technologist (Lab)
+                {appConfig.appSubtitle || 'Central Directory of Medical Technologist (Lab)'}
               </p>
             </div>
           </div>
@@ -460,13 +465,13 @@ export default function App() {
             {/* Live Countdown Badge in Top Header */}
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold shadow-2xs">
               <Timer className="w-3.5 h-3.5 text-emerald-600 animate-pulse" />
-              <span>Next Sync in: <strong className="font-mono font-bold text-emerald-900">{countdownText || 'Calculating...'}</strong></span>
+              <span>Next Update In: <strong className="font-mono font-bold text-emerald-900">{countdownText || 'Calculating...'}</strong></span>
             </div>
 
-            {/* Last Updated Badge */}
+            {/* Last Updated Badge (Only Date, No Time) */}
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 border border-slate-200 text-slate-700 text-xs font-medium">
               <Clock className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Updated: <strong className="font-semibold text-slate-900">{formatTimestamp(metadata?.last_run_at)}</strong></span>
+              <span>Last Updated: <strong className="font-semibold text-slate-900">{formatTimestamp(metadata?.last_run_at)}</strong></span>
             </div>
 
             {/* Current User Pill */}
