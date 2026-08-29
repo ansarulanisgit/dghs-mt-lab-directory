@@ -124,10 +124,10 @@ export default function StaffCard({ staff, onSelect }) {
 
       {/* Card Footer: PRL Date on Left, Light View Details Button on Right in Same Row */}
       <div className="p-3.5 sm:p-4 border-t border-slate-100 bg-slate-50/50 flex items-center justify-between gap-2">
-        {/* Left: Prominent PRL Date (14px font, +2px, Distinct High-Contrast Theme Style) */}
+        {/* Left: Prominent PRL Date (13px font, Light Red Shade Badge) */}
         {!isVacant && staff.prl_date ? (
-          <div className="inline-flex items-center gap-1.5 text-white font-extrabold text-[14px] bg-gradient-to-r from-emerald-800 to-teal-800 px-3 py-1.5 rounded-xl border border-emerald-600/70 shadow-xs">
-            <Calendar className="w-4 h-4 text-emerald-300 shrink-0" />
+          <div className="inline-flex items-center gap-1.5 text-rose-950 font-extrabold text-[13px] bg-rose-50/90 px-2.5 py-1 rounded-xl border border-rose-200/90 shadow-2xs">
+            <Calendar className="w-3.5 h-3.5 text-rose-600 shrink-0" />
             <span>PRL: {formatPRL(staff.prl_date)}</span>
           </div>
         ) : (

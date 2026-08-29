@@ -651,7 +651,7 @@ export default function App() {
             )}
           </div>
 
-          {/* Green PDF Export Button (as requested) */}
+          {/* Green PDF Export Button (Export PDF) */}
           <button
             onClick={handleExportPDF}
             disabled={isLoading || totalCount === 0 || isExportingPDF}
@@ -659,7 +659,7 @@ export default function App() {
             title="Download formatted PDF report for current filter"
           >
             <FileDown className="w-4 h-4" />
-            <span>{isExportingPDF ? 'Generating PDF...' : 'Export PDF Report'}</span>
+            <span>{isExportingPDF ? 'Generating PDF...' : 'Export PDF'}</span>
           </button>
         </div>
 
