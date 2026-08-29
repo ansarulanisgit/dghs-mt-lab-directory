@@ -1,6 +1,16 @@
 import React from 'react';
 import { Building2, MapPin, Phone, Calendar, ArrowRight, User, AlertCircle, CheckCircle2 } from 'lucide-react';
 
+function decodeHtmlEntities(str) {
+  if (!str) return '';
+  return str
+    .replace(/&#039;/g, "'")
+    .replace(/&quot;/g, '"')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>');
+}
+
 export default function StaffCard({ staff, onSelect }) {
   const isVacant = staff.status === 'Vacant' || staff.isVacant || !staff.name || staff.name === '[Vacant Post]';
 
@@ -61,20 +71,20 @@ export default function StaffCard({ staff, onSelect }) {
           <h3 className={`text-base sm:text-lg font-extrabold tracking-tight line-clamp-1 ${
             isVacant ? 'text-amber-950 italic' : 'text-slate-900'
           }`}>
-            {isVacant ? 'Vacant Sanctioned Post' : (staff.name || 'Unnamed Personnel')}
+            {isVacant ? 'Vacant Sanctioned Post' : decodeHtmlEntities(staff.name || 'Unnamed Personnel')}
           </h3>
           <p className="text-xs font-semibold text-emerald-700 mt-0.5 line-clamp-1">
-            {staff.designation || 'Medical Technologist (Lab)'}
+            {decodeHtmlEntities(staff.designation || 'Medical Technologist (Lab)')}
           </p>
         </div>
 
-        {/* Institute, Address & Phone Number */}
+        {/* Institute, Address, Phone Number & HRIS ID */}
         <div className="mt-3.5 space-y-1.5 text-xs text-slate-600">
           {/* Institute */}
           <div className="flex items-start gap-2">
             <Building2 className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
-            <span className="line-clamp-1 font-medium" title={staff.current_institute}>
-              {staff.current_institute || 'DGHS Facility'}
+            <span className="line-clamp-1 font-medium" title={decodeHtmlEntities(staff.current_institute)}>
+              {decodeHtmlEntities(staff.current_institute || 'DGHS Facility')}
             </span>
           </div>
 
@@ -82,11 +92,11 @@ export default function StaffCard({ staff, onSelect }) {
           <div className="flex items-start gap-2">
             <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
             <span className="line-clamp-1 text-slate-500 font-medium">
-              {[staff.upazila, staff.district, staff.division].filter(Boolean).join(', ') || 'Bangladesh'}
+              {[staff.upazila, staff.district, staff.division].filter(Boolean).map(decodeHtmlEntities).join(', ') || 'Bangladesh'}
             </span>
           </div>
 
-          {/* Phone Number (after address) */}
+          {/* Phone Number */}
           {!isVacant && staff.contact_info && (
             <div className="flex items-center gap-2 pt-0.5">
               <Phone className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
@@ -99,41 +109,43 @@ export default function StaffCard({ staff, onSelect }) {
               </a>
             </div>
           )}
+
+          {/* HRIS ID (after phone number with User icon) */}
+          {!isVacant && staff.hris_id && (
+            <div className="flex items-center gap-2 pt-0.5">
+              <User className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+              <span className="text-xs text-slate-600 font-medium">
+                HRIS: <strong className="font-mono font-bold text-slate-800">{staff.hris_id}</strong>
+              </span>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Footer Info: HRIS & Green PRL Date */}
-      <div className="p-4 sm:p-5 pt-3 border-t border-slate-100 bg-slate-50/50 flex flex-col gap-2.5">
-        <div className="flex items-center justify-between text-xs">
-          {/* Left: HRIS ID */}
-          {!isVacant ? (
-            <div className="text-slate-500 text-xs font-medium">
-              HRIS: <strong className="font-mono font-bold text-slate-800">{staff.hris_id || 'N/A'}</strong>
-            </div>
-          ) : (
-            <span className="text-[11px] text-amber-800 font-medium">Position Unoccupied</span>
-          )}
+      {/* Card Footer: PRL Date on Left, Light View Details Button on Right in Same Row */}
+      <div className="p-3.5 sm:p-4 border-t border-slate-100 bg-slate-50/50 flex items-center justify-between gap-2">
+        {/* Left: Prominent PRL Date (14px font, +2px, Distinct High-Contrast Theme Style) */}
+        {!isVacant && staff.prl_date ? (
+          <div className="inline-flex items-center gap-1.5 text-white font-extrabold text-[14px] bg-gradient-to-r from-emerald-800 to-teal-800 px-3 py-1.5 rounded-xl border border-emerald-600/70 shadow-xs">
+            <Calendar className="w-4 h-4 text-emerald-300 shrink-0" />
+            <span>PRL: {formatPRL(staff.prl_date)}</span>
+          </div>
+        ) : (
+          <span className="text-xs font-semibold text-slate-400 italic">
+            {isVacant ? 'Position Vacant' : 'No PRL'}
+          </span>
+        )}
 
-          {/* Right: Green PRL Date (Green theme instead of red) */}
-          {!isVacant && staff.prl_date ? (
-            <div className="flex items-center gap-1.5 text-emerald-700 font-extrabold text-sm tracking-tight bg-emerald-50 px-2.5 py-0.5 rounded-lg border border-emerald-200/80 shadow-2xs">
-              <Calendar className="w-4 h-4 text-emerald-600" />
-              <span>PRL: {formatPRL(staff.prl_date)}</span>
-            </div>
-          ) : (
-            <span className="text-[11px] text-slate-400 font-mono">No PRL</span>
-          )}
-        </div>
-
+        {/* Right: Light View Details Button with bg color */}
         <button
           onClick={() => onSelect(staff)}
-          className={`w-full py-2 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
+          className={`py-1.5 px-3 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs shrink-0 ${
             isVacant
-              ? 'bg-amber-100/80 hover:bg-amber-200/80 text-amber-900'
-              : 'bg-white hover:bg-emerald-50 border border-slate-200 hover:border-emerald-300 text-slate-700 hover:text-emerald-800 shadow-2xs'
+              ? 'bg-amber-100/90 hover:bg-amber-200 text-amber-900 border border-amber-300'
+              : 'bg-emerald-50 hover:bg-emerald-100/90 text-emerald-800 hover:text-emerald-950 border border-emerald-200/90'
           }`}
         >
-          <span>{isVacant ? 'View Post Details' : 'View Full Details'}</span>
+          <span>{isVacant ? 'View Details' : 'View Full Details'}</span>
           <ArrowRight className="w-3.5 h-3.5" />
         </button>
       </div>

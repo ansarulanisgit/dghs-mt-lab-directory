@@ -765,7 +765,7 @@ export default function App() {
         {appConfig.footerText || 'DGHS Medical Technologist (Lab) Personnel Directory • Developed By Ansarul Anis'}
       </footer>
 
-      {/* Floating Circular Back to Top Button (Transparent Frosted Glassmorphism with Theme Gradient) */}
+      {/* Floating Circular Back to Top Button (Transparent Frosted Green Glassmorphism with Theme Gradient) */}
       {showBackToTop && (
         <button
           onClick={scrollToTop}

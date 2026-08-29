@@ -87,13 +87,13 @@ export function exportFilteredStaffPDF(staffList, filterContext = {}) {
     styles: {
       fontSize: 7.5,
       cellPadding: { top: 3.5, right: 3, bottom: 3.5, left: 3 },
-      lineColor: [200, 210, 220],
+      lineColor: [190, 227, 208], // Soft emerald mint border #bee3d0
       lineWidth: 0.5,
-      textColor: [20, 30, 40],
+      textColor: [15, 23, 42],
       font: 'helvetica'
     },
     headStyles: {
-      fillColor: [26, 54, 93], // Dark Navy #1a365d
+      fillColor: [6, 95, 70], // Deep Emerald Green #065f46
       textColor: [255, 255, 255],
       fontStyle: 'bold',
       halign: 'center',
@@ -101,7 +101,7 @@ export function exportFilteredStaffPDF(staffList, filterContext = {}) {
       fontSize: 8
     },
     alternateRowStyles: {
-      fillColor: [248, 250, 252] // Light slate/blue row #f8fafc
+      fillColor: [240, 253, 244] // Light emerald tint #f0fdf4 (Emerald-50)
     },
     columnStyles: {
       0: { halign: 'center', cellWidth: 24 }, // SL
@@ -110,33 +110,33 @@ export function exportFilteredStaffPDF(staffList, filterContext = {}) {
       3: { halign: 'center', cellWidth: 70 }, // CONTACT NO
       4: { halign: 'center', cellWidth: 56 }, // DOB
       5: { halign: 'left' }, // INSTITUTE (auto width flex)
-      6: { halign: 'center', cellWidth: 58, fontStyle: 'bold' } // PRL DATE
+      6: { halign: 'center', cellWidth: 58, fontStyle: 'bold', textColor: [6, 95, 70] } // PRL DATE in emerald
     },
     didDrawPage: (data) => {
       const pageWidth = doc.internal.pageSize.width || doc.internal.pageSize.getWidth();
       const pageHeight = doc.internal.pageSize.height || doc.internal.pageSize.getHeight();
       const pageNumber = data.pageNumber;
 
-      // Header on every page
+      // Header on every page in Deep Theme Emerald
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(13);
-      doc.setTextColor(26, 54, 93);
+      doc.setTextColor(6, 78, 59); // Emerald-900 #064e3b
       doc.text(mainTitle, pageWidth / 2, 32, { align: 'center' });
 
       doc.setFont('helvetica', 'italic');
       doc.setFontSize(8);
-      doc.setTextColor(100, 116, 139);
+      doc.setTextColor(4, 120, 87); // Emerald-700 #047857
       doc.text(subTitle, pageWidth / 2, 45, { align: 'center' });
 
-      // Bottom thin rule
-      doc.setDrawColor(220, 225, 230);
-      doc.setLineWidth(0.5);
+      // Bottom emerald rule
+      doc.setDrawColor(190, 227, 208);
+      doc.setLineWidth(0.6);
       doc.line(25, pageHeight - 25, pageWidth - 25, pageHeight - 25);
 
       // Footer
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(7.5);
-      doc.setTextColor(100, 116, 139);
+      doc.setTextColor(71, 85, 105);
       const footerLeft = `Date Created: ${dateStr} | Data Collected and Formated By Ansarul Anis.`;
       const footerRight = `Page ${pageNumber}`;
       doc.text(footerLeft, 25, pageHeight - 14);
