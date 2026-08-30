@@ -713,19 +713,23 @@ export default function SettingsModal({ currentUser, onClose, onForceUpdate, dyn
                     <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
                       <li className="p-2.5 rounded-xl bg-white border border-slate-200/80 flex items-center justify-between">
                         <span className="text-slate-600">Total Sanctioned Posts:</span>
-                        <strong className="font-mono text-slate-900 font-extrabold">{dynamicStats?.total?.toLocaleString() || '2,506'} entries</strong>
+                        <strong className="font-mono text-slate-900 font-extrabold">{dynamicStats?.total?.toLocaleString() || '10,027'} entries</strong>
                       </li>
                       <li className="p-2.5 rounded-xl bg-white border border-slate-200/80 flex items-center justify-between">
                         <span className="text-slate-600">Active Staff Members:</span>
-                        <strong className="font-mono text-emerald-700 font-extrabold">{dynamicStats?.filled?.toLocaleString() || '1,853'} records</strong>
+                        <strong className="font-mono text-emerald-700 font-extrabold">{dynamicStats?.filled?.toLocaleString() || '6,516'} records</strong>
                       </li>
                       <li className="p-2.5 rounded-xl bg-white border border-slate-200/80 flex items-center justify-between">
                         <span className="text-slate-600">Vacant Posts:</span>
-                        <strong className="font-mono text-amber-700 font-extrabold">{dynamicStats?.vacant?.toLocaleString() || '653'} records</strong>
+                        <strong className="font-mono text-amber-700 font-extrabold">{dynamicStats?.vacant?.toLocaleString() || '3,259'} records</strong>
                       </li>
                       <li className="p-2.5 rounded-xl bg-white border border-slate-200/80 flex items-center justify-between">
+                        <span className="text-slate-600">Abolished Posts:</span>
+                        <strong className="font-mono text-slate-700 font-extrabold">{dynamicStats?.abolished?.toLocaleString() || '252'} records</strong>
+                      </li>
+                      <li className="p-2.5 rounded-xl bg-white border border-slate-200/80 flex items-center justify-between sm:col-span-2">
                         <span className="text-slate-600">Geographic Hierarchy:</span>
-                        <strong className="font-semibold text-slate-900">8 Divisions, 64 Districts</strong>
+                        <strong className="font-semibold text-slate-900">8 Divisions, 64 Districts, Nationwide Facilities</strong>
                       </li>
                     </ul>
                   </div>

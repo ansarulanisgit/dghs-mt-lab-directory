@@ -82,8 +82,8 @@ export default function StaffCard({ staff, onSelect }) {
           {/* Institute */}
           <div className="flex items-start gap-2">
             <Building2 className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
-            <span className="line-clamp-1 font-medium" title={decodeHtmlEntities(staff.current_institute)}>
-              {decodeHtmlEntities(staff.current_institute || 'DGHS Facility')}
+            <span className="line-clamp-1 font-medium" title={decodeHtmlEntities(staff.facility || staff.current_institute)}>
+              {decodeHtmlEntities(staff.facility || staff.current_institute || 'DGHS Facility')}
             </span>
           </div>
 
@@ -96,21 +96,21 @@ export default function StaffCard({ staff, onSelect }) {
           </div>
 
           {/* Phone Number */}
-          {isFilled && staff.contact_info && (
+          {isFilled && (staff.contact_no || staff.contact_info) && (
             <div className="flex items-center gap-2 pt-0.5">
               <Phone className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
               <a
-                href={`tel:${staff.contact_info.split(',')[0]}`}
+                href={`tel:${(staff.contact_no || staff.contact_info).split(',')[0]}`}
                 className="font-mono text-xs font-bold text-emerald-700 hover:text-emerald-900 hover:underline"
                 onClick={(e) => e.stopPropagation()}
               >
-                {staff.contact_info.split(',')[0]}
+                {(staff.contact_no || staff.contact_info).split(',')[0]}
               </a>
             </div>
           )}
 
           {/* HRIS ID (after phone number with User icon) */}
-          {isFilled && staff.hris_id && (
+          {isFilled && staff.hris_id && staff.hris_id !== 'VACANT' && staff.hris_id !== 'ABOLISHED' && (
             <div className="flex items-center gap-2 pt-0.5">
               <User className="w-3.5 h-3.5 text-slate-400 shrink-0" />
               <span className="text-xs text-slate-600 font-medium">

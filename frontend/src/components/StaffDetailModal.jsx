@@ -157,15 +157,21 @@ export default function StaffDetailModal({ staff, onClose }) {
                     {formatFullDate(staff.prl_date)}
                   </span>
                 </div>
-                {staff.contact_info && (
+                {staff.national_id && (
+                  <div>
+                    <span className="text-slate-500 text-xs block">National ID (NID):</span>
+                    <span className="font-mono font-bold text-slate-800 text-xs sm:text-sm">{staff.national_id}</span>
+                  </div>
+                )}
+                {(staff.contact_no || staff.contact_info) && (
                   <div className="sm:col-span-2">
                     <span className="text-slate-500 text-xs block">Contact Number:</span>
                     <a
-                      href={`tel:${staff.contact_info.split(',')[0]}`}
+                      href={`tel:${(staff.contact_no || staff.contact_info).split(',')[0]}`}
                       className="font-mono font-bold text-emerald-700 hover:text-emerald-900 hover:underline flex items-center gap-1.5 mt-0.5"
                     >
                       <Phone className="w-3.5 h-3.5" />
-                      {staff.contact_info}
+                      {staff.contact_no || staff.contact_info}
                     </a>
                   </div>
                 )}
@@ -188,7 +194,7 @@ export default function StaffDetailModal({ staff, onClose }) {
             <div className="space-y-2.5">
               <div>
                 <span className="text-slate-500 text-xs block">Current Institute / Posting Place:</span>
-                <span className="font-bold text-slate-900 block mt-0.5">{decodeHtmlEntities(staff.current_institute || 'DGHS Facility')}</span>
+                <span className="font-bold text-slate-900 block mt-0.5">{decodeHtmlEntities(staff.facility || staff.current_institute || 'DGHS Facility')}</span>
               </div>
               <div className="grid grid-cols-3 gap-2 pt-1">
                 <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-100">

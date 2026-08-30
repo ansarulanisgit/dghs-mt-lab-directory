@@ -1,0 +1,46 @@
+name: Automated DGHS Directory Synchronization
+
+on:
+  schedule:
+    # Runs weekly on Sundays at 00:00 UTC (06:00 AM BST)
+    - cron: '0 0 * * 0'
+  workflow_dispatch:
+
+jobs:
+  scrape-and-sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: 'scraper/package-lock.json'
+
+      - name: Install Scraper Dependencies
+        working-directory: ./scraper
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+
+      - name: Execute DGHS Directory Harvest & Synchronization
+        working-directory: ./scraper
+        env:
+          DGHS_USERNAME: ${{ secrets.DGHS_USERNAME }}
+          DGHS_PASSWORD: ${{ secrets.DGHS_PASSWORD }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          node index.js
+
+      - name: Commit & Push Updated Dataset
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add scraper/scraped_records.json frontend/src/lib/scraped_records.json
+          git diff --quiet && git diff --staged --quiet || (git commit -m "chore(data): auto-update DGHS employee directory dataset [skip ci]" && git push)
