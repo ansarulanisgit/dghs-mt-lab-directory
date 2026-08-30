@@ -72,8 +72,8 @@ export default function StaffCard({ staff, onSelect }) {
               </span>
             )}
 
-            {/* Below Badge: Meaningful Gender Avatar */}
-            <GenderBadge gender={staff.gender} size="sm" />
+            {/* Below Badge: Meaningful Gender Avatar (Only for Filled posts with actual personnel) */}
+            {isFilled && <GenderBadge gender={staff.gender} size="sm" />}
           </div>
         </div>
 
