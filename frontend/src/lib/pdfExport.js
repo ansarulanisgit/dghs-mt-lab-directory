@@ -2,10 +2,9 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
 function formatDDMMYYYY(dateStr) {
-  if (!dateStr) return 'N/A';
+  if (!dateStr) return '-';
   try {
-    // If already YYYY-MM-DD
-    const parts = dateStr.split('T')[0].split('-');
+    const parts = String(dateStr).split('T')[0].split('-');
     if (parts.length === 3) {
       const [y, m, d] = parts;
       return `${d.padStart(2, '0')}-${m.padStart(2, '0')}-${y}`;
@@ -25,14 +24,15 @@ function formatDDMMYYYY(dateStr) {
 
 export function exportFilteredStaffPDF(staffList, filterContext = {}) {
   const doc = new jsPDF({
-    orientation: 'portrait',
+    orientation: 'landscape',
     unit: 'pt',
     format: 'a4'
   });
 
-  const { division, district, upazila, status, totalCount } = filterContext;
+  const { division, district, upazila, status, designationGroups, disciplines, majorDisciplines, designations } = filterContext;
+  const activeDisciplines = disciplines || majorDisciplines || [];
 
-  // Determine Title Header
+  // Determine Scope Title
   let scopeTitle = 'ALL BANGLADESH';
   if (district) {
     scopeTitle = `${district.toUpperCase()} DISTRICT`;
@@ -44,24 +44,37 @@ export function exportFilteredStaffPDF(staffList, filterContext = {}) {
     scopeTitle = `${upazila.toUpperCase()}, ${scopeTitle}`;
   }
 
-  const mainTitle = `MEDICAL TECHNOLOGIST (LAB) — ${scopeTitle}`;
-  const subTitle = `Source: Human Resource Information System (HRIS), sorted by PRL Date`;
+  let groupTitle = 'DGHS EMPLOYEE DIRECTORY';
+  if (designations && designations.length > 0) {
+    groupTitle = `DGHS DIRECTORY — ${designations.join(', ').toUpperCase()}`;
+  } else if (activeDisciplines && activeDisciplines.length > 0) {
+    groupTitle = `DGHS DIRECTORY — ${activeDisciplines.join(', ').toUpperCase()}`;
+  } else if (designationGroups && designationGroups.length > 0) {
+    groupTitle = `DGHS DIRECTORY — ${designationGroups.join(', ').toUpperCase()}`;
+  }
 
-  // Prepare table rows
+  const mainTitle = `${groupTitle} (${scopeTitle})`;
+  const subTitle = `Total Filtered Records: ${staffList.length} | Source: DGHS Human Resource Management System (HRIS)`;
+
+  // Prepare table rows (Discipline & Location removed)
   const tableData = staffList.map((item, index) => {
-    const isVacant = item.status === 'Vacant' || item.name === '[Vacant Post]';
+    const isAbolished = item.status === 'Abolished' || item.name === '[Abolished Post]';
+    const isVacant = !isAbolished && (item.status === 'Vacant' || item.name === '[Vacant Post]');
+    const isFilled = !isAbolished && !isVacant;
+
     return [
       String(index + 1),
-      isVacant ? '[Vacant Post]' : (item.name || 'N/A'),
-      isVacant ? '-' : (item.hris_id || '-'),
-      isVacant ? '-' : (item.contact_info || '-'),
-      isVacant ? '-' : formatDDMMYYYY(item.dob),
+      item.post_id || '-',
+      isAbolished ? '[Abolished Post]' : isVacant ? '[Vacant Post]' : (item.name || 'N/A'),
+      item.designation || 'Medical Technologist',
+      item.status || 'Vacant',
+      isFilled ? (item.hris_id || '-') : '-',
+      isFilled ? (item.contact_info || '-') : '-',
       item.current_institute || 'DGHS Facility',
-      isVacant ? 'Vacant' : formatDDMMYYYY(item.prl_date)
+      isFilled ? formatDDMMYYYY(item.prl_date) : '-'
     ];
   });
 
-  // Today's formatted date string: e.g. "28 August, 2026"
   const today = new Date();
   const dateStr = today.toLocaleDateString('en-GB', {
     day: 'numeric',
@@ -69,31 +82,32 @@ export function exportFilteredStaffPDF(staffList, filterContext = {}) {
     year: 'numeric'
   });
 
-  // Table Configuration matching the attached reference PDF
   autoTable(doc, {
     head: [[
       'SL',
-      'NAME',
+      'POST ID',
+      'PERSONNEL NAME',
+      'DESIGNATION',
+      'STATUS',
       'HRIS ID',
       'CONTACT NO',
-      'DOB',
-      'INSTITUTE',
+      'INSTITUTE / FACILITY',
       'PRL DATE'
     ]],
     body: tableData,
-    startY: 65,
-    margin: { top: 70, bottom: 40, left: 25, right: 25 },
+    startY: 58,
+    margin: { top: 60, bottom: 35, left: 20, right: 20 },
     theme: 'grid',
     styles: {
-      fontSize: 7.5,
+      fontSize: 8,
       cellPadding: { top: 3.5, right: 3, bottom: 3.5, left: 3 },
-      lineColor: [190, 227, 208], // Soft emerald mint border #bee3d0
+      lineColor: [190, 227, 208], // Soft emerald mint border
       lineWidth: 0.5,
       textColor: [15, 23, 42],
       font: 'helvetica'
     },
     headStyles: {
-      fillColor: [6, 95, 70], // Deep Emerald Green #065f46
+      fillColor: [6, 95, 70], // Deep Emerald Green for table header only
       textColor: [255, 255, 255],
       fontStyle: 'bold',
       halign: 'center',
@@ -101,51 +115,59 @@ export function exportFilteredStaffPDF(staffList, filterContext = {}) {
       fontSize: 8
     },
     alternateRowStyles: {
-      fillColor: [240, 253, 244] // Light emerald tint #f0fdf4 (Emerald-50)
+      fillColor: [240, 253, 244] // Emerald-50 tint
     },
     columnStyles: {
       0: { halign: 'center', cellWidth: 24 }, // SL
-      1: { halign: 'left', cellWidth: 110, fontStyle: 'bold' }, // NAME
-      2: { halign: 'center', cellWidth: 46 }, // HRIS ID
-      3: { halign: 'center', cellWidth: 70 }, // CONTACT NO
-      4: { halign: 'center', cellWidth: 56 }, // DOB
-      5: { halign: 'left' }, // INSTITUTE (auto width flex)
-      6: { halign: 'center', cellWidth: 58, fontStyle: 'bold', textColor: [6, 95, 70] } // PRL DATE in emerald
+      1: { halign: 'center', cellWidth: 48, fontStyle: 'bold' }, // POST ID
+      2: { halign: 'left', cellWidth: 140, fontStyle: 'bold' }, // NAME
+      3: { halign: 'left', cellWidth: 140 }, // DESIGNATION
+      4: { halign: 'center', cellWidth: 48, fontStyle: 'bold' }, // STATUS
+      5: { halign: 'center', cellWidth: 54 }, // HRIS
+      6: { halign: 'center', cellWidth: 70 }, // PHONE
+      7: { halign: 'left' }, // INSTITUTE (auto flex)
+      8: { halign: 'center', cellWidth: 62, fontStyle: 'bold', textColor: [6, 95, 70] } // PRL DATE
     },
     didDrawPage: (data) => {
       const pageWidth = doc.internal.pageSize.width || doc.internal.pageSize.getWidth();
       const pageHeight = doc.internal.pageSize.height || doc.internal.pageSize.getHeight();
       const pageNumber = data.pageNumber;
 
-      // Header on every page in Deep Theme Emerald
+      // Top Title Text (Clean Emerald Text on White Background)
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(13);
-      doc.setTextColor(6, 78, 59); // Emerald-900 #064e3b
-      doc.text(mainTitle, pageWidth / 2, 32, { align: 'center' });
+      doc.setFontSize(12);
+      doc.setTextColor(6, 95, 70); // Deep Emerald text
+      doc.text(mainTitle, 20, 24);
 
-      doc.setFont('helvetica', 'italic');
+      // Subtitle & Metadata
+      doc.setFont('helvetica', 'normal');
       doc.setFontSize(8);
-      doc.setTextColor(4, 120, 87); // Emerald-700 #047857
-      doc.text(subTitle, pageWidth / 2, 45, { align: 'center' });
+      doc.setTextColor(100, 116, 139); // Slate-500
+      doc.text(subTitle, 20, 38);
 
-      // Bottom emerald rule
-      doc.setDrawColor(190, 227, 208);
-      doc.setLineWidth(0.6);
-      doc.line(25, pageHeight - 25, pageWidth - 25, pageHeight - 25);
+      // Generated Date on Top Right
+      doc.setFontSize(8);
+      doc.setTextColor(100, 116, 139);
+      doc.text(`Generated: ${dateStr}`, pageWidth - 20, 38, { align: 'right' });
+
+      // Header Separator Line
+      doc.setDrawColor(226, 232, 240); // Slate-200
+      doc.line(20, 46, pageWidth - 20, 46);
 
       // Footer
+      doc.setDrawColor(226, 232, 240);
+      doc.line(20, pageHeight - 22, pageWidth - 20, pageHeight - 22);
+
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(7.5);
-      doc.setTextColor(71, 85, 105);
-      const footerLeft = `Date Created: ${dateStr} | Data Collected and Formated By Ansarul Anis.`;
-      const footerRight = `Page ${pageNumber}`;
-      doc.text(footerLeft, 25, pageHeight - 14);
-      doc.text(footerRight, pageWidth - 25, pageHeight - 14, { align: 'right' });
+      doc.setTextColor(100, 116, 139);
+      doc.text('DGHS Employee Directory - Developed By Ansarul Anis', 20, pageHeight - 10);
+      doc.text(`Page ${pageNumber}`, pageWidth - 20, pageHeight - 10, { align: 'right' });
     }
   });
 
-  // Clean filename: e.g. "MT_Lab_Rajshahi_District_2026-08-28.pdf"
-  const safeScope = (district || division || 'All_Bangladesh').replace(/[^a-zA-Z0-9]/g, '_');
-  const fileName = `DGHS_MT_Lab_${safeScope}_${today.toISOString().split('T')[0]}.pdf`;
-  doc.save(fileName);
+  // Filename formatting
+  const sanitizedScope = scopeTitle.toLowerCase().replace(/[^a-z0-9]/g, '_');
+  const filename = `dghs_employee_directory_${sanitizedScope}_${today.toISOString().split('T')[0]}.pdf`;
+  doc.save(filename);
 }

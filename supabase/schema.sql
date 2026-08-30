@@ -1,20 +1,27 @@
--- DGHS MT-Lab Directory Database Schema
+-- DGHS MT & Pharmacist Directory Database Schema
 -- Supabase (PostgreSQL)
 
 create table if not exists mt_lab_staff (
   id uuid primary key default gen_random_uuid(),
-  hris_id text unique not null,
+  post_id text unique not null,
+  hris_id text,
   provider_id text,
   name text not null,
+  status text not null default 'Vacant',
+  designation text,
+  designation_group text,
+  major_discipline text,
+  pay_scale text,
   contact_info text,
   dob date,
   gender text,
-  post_id text,
-  designation text,
   current_institute text,
   division text,
   district text,
   upazila text,
+  department text,
+  sanctioned_post_type text,
+  additional_roles text,
   prl_date date,
   last_scraped_at timestamptz,
   created_at timestamptz default now(),
@@ -22,11 +29,14 @@ create table if not exists mt_lab_staff (
 );
 
 -- Search and Filter Indexes
+create index if not exists idx_mt_lab_staff_post_id on mt_lab_staff(post_id);
+create index if not exists idx_mt_lab_staff_status on mt_lab_staff(status);
+create index if not exists idx_mt_lab_staff_designation_group on mt_lab_staff(designation_group);
+create index if not exists idx_mt_lab_staff_major_discipline on mt_lab_staff(major_discipline);
 create index if not exists idx_mt_lab_staff_division on mt_lab_staff(division);
 create index if not exists idx_mt_lab_staff_district on mt_lab_staff(district);
 create index if not exists idx_mt_lab_staff_upazila on mt_lab_staff(upazila);
 create index if not exists idx_mt_lab_staff_gender on mt_lab_staff(gender);
-create index if not exists idx_mt_lab_staff_post_id on mt_lab_staff(post_id);
 create index if not exists idx_mt_lab_staff_prl_date on mt_lab_staff(prl_date);
 create index if not exists idx_mt_lab_staff_name on mt_lab_staff using gin (to_tsvector('english', name));
 

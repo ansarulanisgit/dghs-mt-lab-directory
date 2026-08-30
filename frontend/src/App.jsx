@@ -65,11 +65,14 @@ export default function App() {
   // Filters & Search State
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [selectedDesignationGroups, setSelectedDesignationGroups] = useState([]);
+  const [selectedDisciplines, setSelectedDisciplines] = useState([]);
+  const [selectedDesignations, setSelectedDesignations] = useState([]);
   const [selectedDivision, setSelectedDivision] = useState('');
   const [selectedDistrict, setSelectedDistrict] = useState('');
   const [selectedUpazila, setSelectedUpazila] = useState('');
   const [selectedGender, setSelectedGender] = useState('');
-  const [selectedStatus, setSelectedStatus] = useState(''); // '' | 'Filled' | 'Vacant'
+  const [selectedStatus, setSelectedStatus] = useState(''); // '' | 'Filled' | 'Vacant' | 'Abolished'
   const [hidePastPRL, setHidePastPRL] = useState(false); // Toggle to hide past PRL dates
 
   // Default Sorting: PRL Date (Earliest first)
@@ -90,11 +93,144 @@ export default function App() {
   }, [activeRestoredBackup]);
 
   const globalStats = useMemo(() => {
-    const total = activeDataset.length || 2506;
-    const filled = activeDataset.filter(s => s.status === 'Filled').length || 1853;
-    const vacant = activeDataset.filter(s => s.status === 'Vacant').length || 653;
-    return { total, filled, vacant };
+    const total = activeDataset.length || 0;
+    const filled = activeDataset.filter(s => s.status === 'Filled').length || 0;
+    const vacant = activeDataset.filter(s => s.status === 'Vacant').length || 0;
+    const abolished = activeDataset.filter(s => s.status === 'Abolished').length || 0;
+    return { total, filled, vacant, abolished };
   }, [activeDataset]);
+
+  // Dynamic Post Status Counts (Updates dynamically when Designation Groups, Disciplines, Designations or other non-status filters are selected)
+  const dynamicStatusStats = useMemo(() => {
+    let subset = activeDataset;
+
+    // Apply Search
+    if (debouncedSearch) {
+      const q = debouncedSearch.toLowerCase();
+      subset = subset.filter(s =>
+        (s.name || '').toLowerCase().includes(q) ||
+        (s.current_institute || '').toLowerCase().includes(q) ||
+        (s.hris_id || '').toLowerCase().includes(q) ||
+        (s.post_id || '').includes(q) ||
+        (s.district || '').toLowerCase().includes(q) ||
+        (s.upazila || '').toLowerCase().includes(q) ||
+        (s.designation || '').toLowerCase().includes(q) ||
+        (s.major_discipline || '').toLowerCase().includes(q) ||
+        (s.designation_group || '').toLowerCase().includes(q)
+      );
+    }
+
+    // Apply Designation Groups
+    if (selectedDesignationGroups.length > 0) {
+      subset = subset.filter(s => selectedDesignationGroups.includes(s.designation_group));
+    }
+
+    // Apply Disciplines
+    if (selectedDisciplines.length > 0) {
+      subset = subset.filter(s => selectedDisciplines.includes(s.major_discipline));
+    }
+
+    // Apply Designations
+    if (selectedDesignations.length > 0) {
+      subset = subset.filter(s => selectedDesignations.includes(s.designation));
+    }
+
+    // Apply Division
+    if (selectedDivision) {
+      subset = subset.filter(s => (s.division || '').toLowerCase() === selectedDivision.toLowerCase());
+    }
+
+    // Apply District
+    if (selectedDistrict) {
+      subset = subset.filter(s => (s.district || '').toLowerCase() === selectedDistrict.toLowerCase());
+    }
+
+    // Apply Upazila
+    if (selectedUpazila) {
+      const upzQ = selectedUpazila.toLowerCase();
+      subset = subset.filter(s => 
+        (s.upazila && s.upazila.toLowerCase() === upzQ) ||
+        (s.current_institute && s.current_institute.toLowerCase().includes(upzQ))
+      );
+    }
+
+    // Apply Gender
+    if (selectedGender) {
+      subset = subset.filter(s => (s.gender || '').toLowerCase() === selectedGender.toLowerCase());
+    }
+
+    // Apply Hide Past PRL
+    if (hidePastPRL) {
+      const todayStr = new Date().toISOString().split('T')[0];
+      subset = subset.filter(s => {
+        if (!s.prl_date) return s.status === 'Vacant' || s.status === 'Abolished';
+        return s.prl_date.split('T')[0] >= todayStr;
+      });
+    }
+
+    const total = subset.length;
+    const filled = subset.filter(s => s.status === 'Filled').length;
+    const vacant = subset.filter(s => s.status === 'Vacant').length;
+    const abolished = subset.filter(s => s.status === 'Abolished').length;
+
+    return { total, filled, vacant, abolished };
+  }, [
+    activeDataset,
+    debouncedSearch,
+    selectedDesignationGroups,
+    selectedDisciplines,
+    selectedDesignations,
+    selectedDivision,
+    selectedDistrict,
+    selectedUpazila,
+    selectedGender,
+    hidePastPRL
+  ]);
+
+  // 1. Designation Group Options (with live counts)
+  const designationGroupOptions = useMemo(() => {
+    const map = {};
+    for (const s of activeDataset) {
+      const grp = s.designation_group || 'Medical Technologist';
+      map[grp] = (map[grp] || 0) + 1;
+    }
+    return Object.entries(map)
+      .map(([value, count]) => ({ value, label: value, count }))
+      .sort((a, b) => b.count - a.count);
+  }, [activeDataset]);
+
+  // 2. Discipline Options (Hierarchical: strictly scoped to selected Designation Groups)
+  const disciplineOptions = useMemo(() => {
+    const map = {};
+    for (const s of activeDataset) {
+      if (selectedDesignationGroups.length > 0 && !selectedDesignationGroups.includes(s.designation_group)) {
+        continue;
+      }
+      const disc = s.major_discipline || 'General & Clinical Specializations';
+      map[disc] = (map[disc] || 0) + 1;
+    }
+    return Object.entries(map)
+      .map(([value, count]) => ({ value, label: value, count }))
+      .sort((a, b) => b.count - a.count);
+  }, [activeDataset, selectedDesignationGroups]);
+
+  // 3. Designation Options (Hierarchical: strictly scoped to selected Designation Groups AND Disciplines)
+  const designationOptions = useMemo(() => {
+    const map = {};
+    for (const s of activeDataset) {
+      if (selectedDesignationGroups.length > 0 && !selectedDesignationGroups.includes(s.designation_group)) {
+        continue;
+      }
+      if (selectedDisciplines.length > 0 && !selectedDisciplines.includes(s.major_discipline)) {
+        continue;
+      }
+      const desig = s.designation || 'Medical Technologist';
+      map[desig] = (map[desig] || 0) + 1;
+    }
+    return Object.entries(map)
+      .map(([value, count]) => ({ value, label: value, count }))
+      .sort((a, b) => b.count - a.count);
+  }, [activeDataset, selectedDesignationGroups, selectedDisciplines]);
 
   // Initialize initial backup snapshot if none exists
   useEffect(() => {
@@ -164,6 +300,41 @@ export default function App() {
     setCurrentPage(1);
   };
 
+  // Hierarchical cascading handlers with automatic pruning of invalid child selections
+  const handleDesignationGroupsChange = (grps) => {
+    setSelectedDesignationGroups(grps);
+    if (grps.length > 0) {
+      const validDisciplines = new Set(
+        activeDataset.filter(s => grps.includes(s.designation_group)).map(s => s.major_discipline)
+      );
+      setSelectedDisciplines(prev => prev.filter(d => validDisciplines.has(d)));
+
+      const validDesignations = new Set(
+        activeDataset.filter(s => grps.includes(s.designation_group)).map(s => s.designation)
+      );
+      setSelectedDesignations(prev => prev.filter(d => validDesignations.has(d)));
+    }
+    setCurrentPage(1);
+  };
+
+  const handleDisciplinesChange = (discs) => {
+    setSelectedDisciplines(discs);
+    if (discs.length > 0) {
+      const validDesignations = new Set(
+        activeDataset
+          .filter(s => (selectedDesignationGroups.length === 0 || selectedDesignationGroups.includes(s.designation_group)) && discs.includes(s.major_discipline))
+          .map(s => s.designation)
+      );
+      setSelectedDesignations(prev => prev.filter(d => validDesignations.has(d)));
+    }
+    setCurrentPage(1);
+  };
+
+  const handleDesignationsChange = (desigs) => {
+    setSelectedDesignations(desigs);
+    setCurrentPage(1);
+  };
+
   const handleSortChange = (newSortBy, newSortOrder) => {
     setSortBy(newSortBy);
     setSortOrder(newSortOrder);
@@ -173,6 +344,9 @@ export default function App() {
   const handleResetFilters = () => {
     setSearchTerm('');
     setDebouncedSearch('');
+    setSelectedDesignationGroups([]);
+    setSelectedDisciplines([]);
+    setSelectedDesignations([]);
     setSelectedDivision('');
     setSelectedDistrict('');
     setSelectedUpazila('');
@@ -187,6 +361,9 @@ export default function App() {
   const activeFilterCount = useMemo(() => {
     let count = 0;
     if (debouncedSearch) count++;
+    if (selectedDesignationGroups.length > 0) count += selectedDesignationGroups.length;
+    if (selectedDisciplines.length > 0) count += selectedDisciplines.length;
+    if (selectedDesignations.length > 0) count += selectedDesignations.length;
     if (selectedStatus) count++;
     if (selectedDivision) count++;
     if (selectedDistrict) count++;
@@ -194,7 +371,7 @@ export default function App() {
     if (selectedGender) count++;
     if (hidePastPRL) count++;
     return count;
-  }, [debouncedSearch, selectedStatus, selectedDivision, selectedDistrict, selectedUpazila, selectedGender, hidePastPRL]);
+  }, [debouncedSearch, selectedDesignationGroups, selectedDisciplines, selectedDesignations, selectedStatus, selectedDivision, selectedDistrict, selectedUpazila, selectedGender, hidePastPRL]);
 
   // Fetch metadata on mount
   const fetchMetadata = useCallback(async () => {
@@ -244,26 +421,43 @@ export default function App() {
           (s.post_id || '').includes(q) ||
           (s.district || '').toLowerCase().includes(q) ||
           (s.upazila || '').toLowerCase().includes(q) ||
-          (s.designation || '').toLowerCase().includes(q)
+          (s.designation || '').toLowerCase().includes(q) ||
+          (s.major_discipline || '').toLowerCase().includes(q) ||
+          (s.designation_group || '').toLowerCase().includes(q)
         );
       }
 
-      // 2. Status Filter
+      // 2. Designation Groups Filter (Multi-select)
+      if (selectedDesignationGroups.length > 0) {
+        filtered = filtered.filter(s => selectedDesignationGroups.includes(s.designation_group));
+      }
+
+      // 3. Disciplines Filter (Hierarchical Multi-select)
+      if (selectedDisciplines.length > 0) {
+        filtered = filtered.filter(s => selectedDisciplines.includes(s.major_discipline));
+      }
+
+      // 4. Designations Filter (Hierarchical Multi-select)
+      if (selectedDesignations.length > 0) {
+        filtered = filtered.filter(s => selectedDesignations.includes(s.designation));
+      }
+
+      // 5. Status Filter (Filled, Vacant, Abolished)
       if (selectedStatus) {
         filtered = filtered.filter(s => (s.status || '').toLowerCase() === selectedStatus.toLowerCase());
       }
 
-      // 3. Division Filter
+      // 6. Division Filter
       if (selectedDivision) {
         filtered = filtered.filter(s => (s.division || '').toLowerCase() === selectedDivision.toLowerCase());
       }
 
-      // 4. District Filter
+      // 7. District Filter
       if (selectedDistrict) {
         filtered = filtered.filter(s => (s.district || '').toLowerCase() === selectedDistrict.toLowerCase());
       }
 
-      // 5. Upazila Filter
+      // 8. Upazila Filter
       if (selectedUpazila) {
         const upzQ = selectedUpazila.toLowerCase();
         filtered = filtered.filter(s => 
@@ -272,24 +466,24 @@ export default function App() {
         );
       }
 
-      // 6. Gender Filter
+      // 9. Gender Filter
       if (selectedGender) {
         filtered = filtered.filter(s => (s.gender || '').toLowerCase() === selectedGender.toLowerCase());
       }
 
-      // 7. Hide Past PRL Filter (Reference: Today's date YYYY-MM-DD)
+      // 10. Hide Past PRL Filter (Reference: Today's date YYYY-MM-DD)
       if (hidePastPRL) {
         const todayStr = new Date().toISOString().split('T')[0];
         filtered = filtered.filter(s => {
           if (!s.prl_date) {
-            return s.status === 'Vacant';
+            return s.status === 'Vacant' || s.status === 'Abolished';
           }
           const itemDate = s.prl_date.split('T')[0];
           return itemDate >= todayStr;
         });
       }
 
-      // 8. Robust Sorting
+      // 11. Robust Sorting
       filtered.sort((a, b) => {
         if (sortBy === 'prl_date') {
           const valA = a.prl_date || '';
@@ -307,8 +501,8 @@ export default function App() {
         }
 
         if (sortBy === 'name') {
-          const isVacA = a.status === 'Vacant';
-          const isVacB = b.status === 'Vacant';
+          const isVacA = a.status === 'Vacant' || a.status === 'Abolished';
+          const isVacB = b.status === 'Vacant' || b.status === 'Abolished';
           if (isVacA && !isVacB) return 1;
           if (!isVacA && isVacB) return -1;
           const nameA = (a.name || '').toLowerCase();
@@ -392,6 +586,9 @@ export default function App() {
     activeDataset,
     activeRestoredBackup,
     debouncedSearch,
+    selectedDesignationGroups,
+    selectedDisciplines,
+    selectedDesignations,
     selectedStatus,
     selectedDivision,
     selectedDistrict,
@@ -455,6 +652,9 @@ export default function App() {
         district: selectedDistrict,
         upazila: selectedUpazila,
         status: selectedStatus,
+        designationGroups: selectedDesignationGroups,
+        disciplines: selectedDisciplines,
+        designations: selectedDesignations,
         totalCount
       });
     } catch (err) {
@@ -499,10 +699,10 @@ export default function App() {
             </div>
             <div>
               <h1 className="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight">
-                {appConfig.appTitle || 'DGHS MT Lab Directory'}
+                {appConfig.appTitle || 'DGHS Employee Directory'}
               </h1>
               <p className="text-xs text-slate-500 font-medium">
-                {appConfig.appSubtitle || 'Central Directory of Medical Technologist (Lab)'}
+                {appConfig.appSubtitle || 'Central Directory of Medical Technologists and Pharmacists'}
               </p>
             </div>
           </div>
@@ -640,6 +840,15 @@ export default function App() {
         <FilterBar
           searchTerm={searchTerm}
           onSearchChange={setSearchTerm}
+          selectedDesignationGroups={selectedDesignationGroups}
+          onDesignationGroupsChange={handleDesignationGroupsChange}
+          designationGroupOptions={designationGroupOptions}
+          selectedDisciplines={selectedDisciplines}
+          onDisciplinesChange={handleDisciplinesChange}
+          disciplineOptions={disciplineOptions}
+          selectedDesignations={selectedDesignations}
+          onDesignationsChange={handleDesignationsChange}
+          designationOptions={designationOptions}
           selectedDivision={selectedDivision}
           onDivisionChange={setSelectedDivision}
           selectedDistrict={selectedDistrict}
@@ -660,7 +869,7 @@ export default function App() {
           onSortChange={handleSortChange}
           onResetFilters={handleResetFilters}
           activeFilterCount={activeFilterCount}
-          stats={globalStats}
+          stats={dynamicStatusStats}
         />
 
         {/* Action Bar: Showing Count on Left & Green PDF Export Button on Right */}
@@ -673,9 +882,8 @@ export default function App() {
               <span>No matching records found</span>
             ) : (
               <span>
-                Showing <strong className="text-slate-900">{startItem} to {endItem}</strong> of{' '}
-                <strong className="text-emerald-700 font-extrabold">{totalCount}</strong>{' '}
-                {selectedStatus === 'Filled' ? 'staff members' : selectedStatus === 'Vacant' ? 'vacant posts' : 'personnel & posts'}
+                Showing <strong className="text-slate-900">{startItem.toLocaleString()} to {endItem.toLocaleString()}</strong> of{' '}
+                <strong className="text-emerald-700 font-extrabold">{totalCount.toLocaleString()}</strong> posts
               </span>
             )}
           </div>
@@ -791,7 +999,7 @@ export default function App() {
 
       {/* Footer */}
       <footer className="mt-auto border-t border-slate-200 bg-white py-4 text-center text-xs text-slate-500 font-medium px-4">
-        {appConfig.footerText || 'DGHS MT (Lab) Directory | Developed By Ansarul Anis'}
+        {appConfig.footerText || 'DGHS Employee Directory - Developed By Ansarul Anis'}
       </footer>
 
       {/* Floating Circular Back to Top Button (Transparent Frosted Green Glassmorphism with Theme Gradient) */}

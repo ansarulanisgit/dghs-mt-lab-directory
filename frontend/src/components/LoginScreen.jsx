@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { loginUser, getLockoutState, MAX_LOGIN_ATTEMPTS } from '../lib/authStore';
-import { Lock, Mail, Eye, EyeOff, ShieldCheck, ArrowRight, AlertCircle, ShieldAlert, Timer } from 'lucide-react';
+import { Lock, Mail, Eye, EyeOff, User, Users, ShieldCheck, ArrowRight, AlertCircle, ShieldAlert, Timer } from 'lucide-react';
 
 function formatLockoutCountdown(totalSeconds) {
   if (totalSeconds <= 0) return '00:00:00';
@@ -68,10 +68,10 @@ export default function LoginScreen({ onLoginSuccess }) {
         {/* Header Branding */}
         <div className="text-center mb-5 sm:mb-7">
           <div className="inline-flex items-center justify-center w-13 h-13 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-400 text-slate-950 shadow-lg shadow-emerald-500/30 mb-2.5 sm:mb-3">
-            <ShieldCheck className="w-7 h-7 sm:w-9 sm:h-9" />
+            <User className="w-7 h-7 sm:w-9 sm:h-9" />
           </div>
           <h1 className="text-xl sm:text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
-            DGHS MT Lab Directory
+            DGHS Employee Directory
           </h1>
           <p className="text-xs sm:text-sm text-slate-400 mt-1 font-medium">
             Sign In to See the Directory

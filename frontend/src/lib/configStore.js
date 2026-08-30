@@ -11,15 +11,15 @@ export const DEFAULT_CONFIG = {
     'https://hrm.dghs.gov.bd/postings/create?provider_id=194744'
   ],
   scheduleIntervalDays: 7, // Configurable interval in days
-  appTitle: 'DGHS MT Lab Directory',
-  appSubtitle: 'Central Directory of Medical Technologist (Lab)',
-  footerText: 'DGHS MT (Lab) Directory | Developed By Ansarul Anis',
-  designatedSearchQuery: 'Medical Technologist (Lab)',
+  appTitle: 'DGHS Employee Directory',
+  appSubtitle: 'Central Directory of Medical Technologists and Pharmacists',
+  footerText: 'DGHS Employee Directory - Developed By Ansarul Anis',
+  designatedSearchQuery: 'Medical Technologist',
   adminEmail: 'ansarul.contact@gmail.com',
   adminPassword: 'Ansarul@233'
 };
 
-const STORAGE_CONFIG_KEY = 'dghs_system_config_v1';
+const STORAGE_CONFIG_KEY = 'dghs_system_config_v2';
 
 export function getSystemConfig() {
   try {

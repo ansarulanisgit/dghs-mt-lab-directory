@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { Search, RotateCcw, ArrowUpDown, ChevronDown, Calendar } from 'lucide-react';
+import MultiSelectDropdown from './MultiSelectDropdown';
 import { 
   BANGLADESH_DIVISIONS, 
   BANGLADESH_DISTRICTS, 
@@ -10,6 +11,19 @@ import {
 export default function FilterBar({
   searchTerm,
   onSearchChange,
+  // 1. Designation Groups (Multi-select Dropdown)
+  selectedDesignationGroups = [],
+  onDesignationGroupsChange,
+  designationGroupOptions = [],
+  // 2. Disciplines (Hierarchical Multi-select Dropdown)
+  selectedDisciplines = [],
+  onDisciplinesChange,
+  disciplineOptions = [],
+  // 3. Designations (Hierarchical Multi-select Dropdown)
+  selectedDesignations = [],
+  onDesignationsChange,
+  designationOptions = [],
+  // Location & Attributes
   selectedDivision,
   selectedDistrict,
   selectedUpazila,
@@ -25,7 +39,7 @@ export default function FilterBar({
   onSortChange,
   onResetFilters,
   activeFilterCount,
-  stats
+  stats = { total: 0, filled: 0, vacant: 0, abolished: 0 }
 }) {
   // Compute available districts dynamically based on selected division
   const availableDistricts = useMemo(() => {
@@ -86,7 +100,7 @@ export default function FilterBar({
           <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
             type="text"
-            placeholder="Search by name, institute, post ID, or HRIS ID..."
+            placeholder="Search by name, institute, designation, post ID, or HRIS ID..."
             value={searchTerm}
             onChange={(e) => onSearchChange(e.target.value)}
             className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all placeholder:text-slate-400"
@@ -138,25 +152,50 @@ export default function FilterBar({
             <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
           </div>
 
-          {/* Reset Filters */}
+          {/* Reset Filters (Desktop) */}
           {activeFilterCount > 0 && (
             <button
               onClick={onResetFilters}
-              className="px-3.5 py-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-600 hover:text-slate-900 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shrink-0"
+              className="hidden sm:flex px-3.5 py-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-600 hover:text-slate-900 text-xs font-semibold items-center gap-1.5 transition-colors cursor-pointer shrink-0"
               title="Reset all active filters"
             >
               <RotateCcw className="w-3.5 h-3.5" />
-              <span>Reset</span>
+              <span>Reset ({activeFilterCount})</span>
             </button>
           )}
         </div>
       </div>
 
-      {/* Cascading Filter Controls Bar */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 pt-3 border-t border-slate-100">
-        {/* Post Status Filter */}
+      {/* Row 1: Hierarchical Dropdowns + Post Status (2 Columns on Mobile, 4 on Desktop) */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 pt-3 border-t border-slate-100">
+        {/* 1. Designation Groups Dropdown */}
+        <MultiSelectDropdown
+          title="Designation Groups"
+          options={designationGroupOptions}
+          selectedValues={selectedDesignationGroups}
+          onChange={onDesignationGroupsChange}
+        />
+
+        {/* 2. Disciplines Dropdown (Hierarchical) */}
+        <MultiSelectDropdown
+          title="Disciplines"
+          options={disciplineOptions}
+          selectedValues={selectedDisciplines}
+          onChange={onDisciplinesChange}
+        />
+
+        {/* 3. Designations Dropdown (Hierarchical) */}
+        <MultiSelectDropdown
+          title="Designations"
+          options={designationOptions}
+          selectedValues={selectedDesignations}
+          onChange={onDesignationsChange}
+          searchable={true}
+        />
+
+        {/* 4. Post Status Dropdown (Moved to Row 1 Right with dynamic live counts) */}
         <div>
-          <label className="block text-[10px] font-extrabold uppercase tracking-wider text-slate-400 mb-1">
+          <label className="block text-[10px] font-extrabold uppercase tracking-wider text-slate-500 mb-1">
             Post Status
           </label>
           <div className="relative">
@@ -165,17 +204,21 @@ export default function FilterBar({
               onChange={(e) => onStatusChange(e.target.value)}
               className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white appearance-none cursor-pointer"
             >
-              <option value="">All Status ({stats.total})</option>
-              <option value="Filled">Filled Posts ({stats.filled})</option>
-              <option value="Vacant">Vacant Posts ({stats.vacant})</option>
+              <option value="">All Status ({stats.total?.toLocaleString() || 0})</option>
+              <option value="Filled">Filled ({stats.filled?.toLocaleString() || 0})</option>
+              <option value="Vacant">Vacant ({stats.vacant?.toLocaleString() || 0})</option>
+              <option value="Abolished">Abolished ({stats.abolished?.toLocaleString() || 0})</option>
             </select>
             <ChevronDown className="w-3 h-3 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           </div>
         </div>
+      </div>
 
+      {/* Row 2: Location & Demographics (2 Columns on Mobile, 4 on Desktop) */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 pt-1">
         {/* Division Dropdown */}
         <div>
-          <label className="block text-[10px] font-extrabold uppercase tracking-wider text-slate-400 mb-1">
+          <label className="block text-[10px] font-extrabold uppercase tracking-wider text-slate-500 mb-1">
             Division
           </label>
           <div className="relative">
@@ -195,7 +238,7 @@ export default function FilterBar({
 
         {/* District Dropdown */}
         <div>
-          <label className="block text-[10px] font-extrabold uppercase tracking-wider text-slate-400 mb-1">
+          <label className="block text-[10px] font-extrabold uppercase tracking-wider text-slate-500 mb-1">
             District
           </label>
           <div className="relative">
@@ -204,7 +247,7 @@ export default function FilterBar({
               onChange={(e) => handleDistrictChange(e.target.value)}
               className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white appearance-none cursor-pointer"
             >
-              <option value="">{selectedDivision ? `All Districts in ${selectedDivision}` : 'All Districts'}</option>
+              <option value="">{selectedDivision ? `All in ${selectedDivision}` : 'All Districts'}</option>
               {availableDistricts.map((dist) => (
                 <option key={dist} value={dist}>{dist}</option>
               ))}
@@ -215,8 +258,8 @@ export default function FilterBar({
 
         {/* Upazila Dropdown */}
         <div>
-          <label className="block text-[10px] font-extrabold uppercase tracking-wider text-slate-400 mb-1">
-            Upazila
+          <label className="block text-[10px] font-extrabold uppercase tracking-wider text-slate-500 mb-1">
+            Upazila / Area
           </label>
           <div className="relative">
             <select
@@ -229,7 +272,7 @@ export default function FilterBar({
                   : 'bg-slate-100 border-slate-200/60 text-slate-400 cursor-not-allowed'
               }`}
             >
-              <option value="">{selectedDistrict ? `All Upazilas in ${selectedDistrict}` : 'Select District first'}</option>
+              <option value="">{selectedDistrict ? `All in ${selectedDistrict}` : 'Select District first'}</option>
               {availableUpazilas.map((upz) => (
                 <option key={upz} value={upz}>{upz}</option>
               ))}
@@ -238,9 +281,9 @@ export default function FilterBar({
           </div>
         </div>
 
-        {/* Gender Filter */}
-        <div className="col-span-2 sm:col-span-1">
-          <label className="block text-[10px] font-extrabold uppercase tracking-wider text-slate-400 mb-1">
+        {/* Gender Dropdown */}
+        <div>
+          <label className="block text-[10px] font-extrabold uppercase tracking-wider text-slate-500 mb-1">
             Gender
           </label>
           <div className="relative">
@@ -257,6 +300,20 @@ export default function FilterBar({
           </div>
         </div>
       </div>
+
+      {/* Mobile-only Reset Button (Displayed below gender filter on mobile devices) */}
+      {activeFilterCount > 0 && (
+        <div className="sm:hidden pt-2 border-t border-slate-100">
+          <button
+            onClick={onResetFilters}
+            className="w-full py-2.5 px-4 rounded-xl border border-rose-200 bg-rose-50/90 hover:bg-rose-100 text-rose-800 text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer shadow-2xs"
+            title="Reset all active filters"
+          >
+            <RotateCcw className="w-4 h-4 text-rose-600" />
+            <span>Reset All Filters ({activeFilterCount})</span>
+          </button>
+        </div>
+      )}
     </div>
   );
 }

@@ -37,7 +37,7 @@ export async function upsertStaffRecords(records) {
     return { count: records.length, dryRun: true };
   }
 
-  console.log(`[Supabase] Upserting ${records.length} records into 'mt_lab_staff' (keyed on hris_id)...`);
+  console.log(`[Supabase] Upserting ${records.length} records into 'mt_lab_staff' (keyed on post_id)...`);
 
   // Batch in chunks of 100 for reliable database network transactions
   const chunkSize = 100;
@@ -47,7 +47,7 @@ export async function upsertStaffRecords(records) {
     const chunk = records.slice(i, i + chunkSize);
     const { data, error } = await supabase
       .from('mt_lab_staff')
-      .upsert(chunk, { onConflict: 'hris_id', ignoreDuplicates: false });
+      .upsert(chunk, { onConflict: 'post_id', ignoreDuplicates: false });
 
     if (error) {
       console.error(`[Supabase] Error upserting chunk ${i / chunkSize + 1}:`, error.message);
