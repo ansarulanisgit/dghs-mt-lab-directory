@@ -46,7 +46,7 @@ export default function SettingsModal({ currentUser, onClose, onForceUpdate, dyn
   const [userList, setUserList] = useState(getUsers());
   const [userModalOpen, setUserModalOpen] = useState(false);
   const [editingUserId, setEditingUserId] = useState(null);
-  const [userForm, setUserForm] = useState({ name: '', email: '', password: '', role: 'User' });
+  const [userForm, setUserForm] = useState({ name: '', email: '', password: '', role: 'User', canExportPdf: false });
   const [userFormError, setUserFormError] = useState('');
   const [userFormSuccess, setUserFormSuccess] = useState('');
   const [showUserPassword, setShowUserPassword] = useState(false);
@@ -145,7 +145,7 @@ export default function SettingsModal({ currentUser, onClose, onForceUpdate, dyn
   // User CRUD Handlers
   const openAddUser = () => {
     setEditingUserId(null);
-    setUserForm({ name: '', email: '', password: '', role: 'User' });
+    setUserForm({ name: '', email: '', password: '', role: 'User', canExportPdf: false });
     setUserFormError('');
     setUserFormSuccess('');
     setUserModalOpen(true);
@@ -200,7 +200,13 @@ export default function SettingsModal({ currentUser, onClose, onForceUpdate, dyn
 
   const openEditUser = (user) => {
     setEditingUserId(user.id);
-    setUserForm({ name: user.name, email: user.email, password: user.password, role: user.role });
+    setUserForm({
+      name: user.name,
+      email: user.email,
+      password: user.password,
+      role: user.role,
+      canExportPdf: user.role === 'Admin' ? true : Boolean(user.canExportPdf)
+    });
     setUserFormError('');
     setUserFormSuccess('');
     setUserModalOpen(true);
@@ -556,6 +562,7 @@ export default function SettingsModal({ currentUser, onClose, onForceUpdate, dyn
                         <tr>
                           <th className="p-3">User</th>
                           <th className="p-3">Role</th>
+                          <th className="p-3">PDF Export</th>
                           <th className="p-3 hidden sm:table-cell">Password</th>
                           <th className="p-3 text-right">Actions</th>
                         </tr>
@@ -574,20 +581,33 @@ export default function SettingsModal({ currentUser, onClose, onForceUpdate, dyn
                                 {u.role}
                               </span>
                             </td>
+                            <td className="p-3">
+                              {u.role === 'Admin' || u.canExportPdf ? (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                  <Check className="w-2.5 h-2.5" />
+                                  Allowed
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-100 text-slate-500 border border-slate-200">
+                                  <Lock className="w-2.5 h-2.5" />
+                                  Inactive
+                                </span>
+                              )}
+                            </td>
                             <td className="p-3 font-mono text-slate-400 hidden sm:table-cell">
                               ••••••••
                             </td>
                             <td className="p-3 text-right space-x-1">
                               <button
                                 onClick={() => openEditUser(u)}
-                                className="p-1.5 text-slate-500 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition-colors"
+                                className="p-1.5 text-slate-500 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition-colors cursor-pointer"
                                 title="Edit User"
                               >
                                 <Edit2 className="w-3.5 h-3.5" />
                               </button>
                               <button
                                 onClick={() => handleDeleteUser(u)}
-                                className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                                className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
                                 title="Delete User"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
@@ -902,12 +922,44 @@ export default function SettingsModal({ currentUser, onClose, onForceUpdate, dyn
                 <label className="block font-semibold text-slate-700 mb-1">Role</label>
                 <select
                   value={userForm.role}
-                  onChange={(e) => setUserForm({ ...userForm, role: e.target.value })}
+                  onChange={(e) => {
+                    const newRole = e.target.value;
+                    setUserForm({
+                      ...userForm,
+                      role: newRole,
+                      canExportPdf: newRole === 'Admin' ? true : userForm.canExportPdf
+                    });
+                  }}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white"
                 >
-                  <option value="User">User (Read-only)</option>
-                  <option value="Admin">Administrator</option>
+                  <option value="User">User (Standard Access)</option>
+                  <option value="Admin">Administrator (Full Access)</option>
                 </select>
+              </div>
+
+              {/* PDF Export Permission Toggle */}
+              <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="block font-bold text-slate-800 text-xs">PDF Export Permission</span>
+                    <span className="text-[11px] text-slate-500">Allow user to download and export PDF reports</span>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={userForm.role === 'Admin' || Boolean(userForm.canExportPdf)}
+                      disabled={userForm.role === 'Admin'}
+                      onChange={(e) => setUserForm({ ...userForm, canExportPdf: e.target.checked })}
+                      className="sr-only peer"
+                    />
+                    <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-600 peer-disabled:opacity-60"></div>
+                  </label>
+                </div>
+                {userForm.role === 'Admin' ? (
+                  <p className="text-[10px] text-emerald-700 font-medium">Administrators always have PDF export permission.</p>
+                ) : (
+                  <p className="text-[10px] text-slate-500">By default inactive for users unless enabled here.</p>
+                )}
               </div>
 
               <div className="pt-2 flex justify-end gap-2">

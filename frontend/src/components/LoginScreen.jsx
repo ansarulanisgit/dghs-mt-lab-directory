@@ -67,10 +67,10 @@ export default function LoginScreen({ onLoginSuccess }) {
       <div className="relative z-10 w-full max-w-md bg-slate-900/90 backdrop-blur-xl border border-slate-700/60 rounded-2xl sm:rounded-3xl p-5 sm:p-8 shadow-2xl shadow-black/50 animate-in zoom-in-95 duration-200 flex flex-col justify-between my-auto">
         {/* Header Branding */}
         <div className="text-center mb-5 sm:mb-7">
-          <div className="inline-flex items-center justify-center w-13 h-13 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-400 text-slate-950 shadow-lg shadow-emerald-500/30 mb-2.5 sm:mb-3">
-            <User className="w-7 h-7 sm:w-9 sm:h-9" />
+          <div className="inline-flex items-center justify-center p-4 sm:p-4.5 rounded-2xl sm:rounded-3xl bg-gradient-to-tr from-emerald-500 to-teal-400 text-slate-950 shadow-xl shadow-emerald-500/30 mb-3.5 sm:mb-4">
+            <User className="w-8.5 h-8.5 sm:w-9 sm:h-9" />
           </div>
-          <h1 className="text-xl sm:text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
+          <h1 className="text-[18px] sm:text-[22px] md:text-[26px] font-extrabold tracking-tight text-white">
             DGHS Employee Directory
           </h1>
           <p className="text-xs sm:text-sm text-slate-400 mt-1 font-medium">
@@ -115,8 +115,8 @@ export default function LoginScreen({ onLoginSuccess }) {
         {/* Login Form */}
         <form onSubmit={handleSubmit} className="space-y-3.5 sm:space-y-4">
           <div>
-            <div className="flex items-center justify-between mb-1">
-              <label className="block text-xs font-semibold text-slate-300">
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="block text-sm font-semibold text-slate-200">
                 Email or Username
               </label>
               {!isLocked && lockoutInfo.failedAttempts > 0 && (
@@ -144,7 +144,7 @@ export default function LoginScreen({ onLoginSuccess }) {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1">
+            <label className="block text-sm font-semibold text-slate-200 mb-1.5">
               Password
             </label>
             <div className="relative">

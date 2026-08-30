@@ -15,7 +15,7 @@ import SettingsModal from './components/SettingsModal';
 import LoginScreen from './components/LoginScreen';
 import {
   Users, Clock, Settings, LogOut, AlertCircle, RefreshCw, Layers, User, FileDown, Timer,
-  AlertTriangle, Info, X, ShieldAlert, CheckCircle2, ChevronUp
+  AlertTriangle, Info, X, ShieldAlert, CheckCircle2, ChevronUp, Lock
 } from 'lucide-react';
 
 const PAGE_SIZE = 100; // 100 items per page
@@ -24,6 +24,9 @@ export default function App() {
   // Authentication State
   const [currentUser, setCurrentUser] = useState(getCurrentUser());
   const [settingsOpen, setSettingsOpen] = useState(false);
+
+  // Check if current user has permission to export PDF reports
+  const canExportPdf = currentUser?.role === 'Admin' || Boolean(currentUser?.canExportPdf);
 
   // Back to top floating button state (scroll threshold: 400px)
   const [showBackToTop, setShowBackToTop] = useState(false);
@@ -645,6 +648,10 @@ export default function App() {
   };
 
   const handleExportPDF = () => {
+    if (!canExportPdf) {
+      alert('PDF Export Restricted: Your account does not have permission to export PDF reports. Please contact an administrator to grant PDF export access.');
+      return;
+    }
     setIsExportingPDF(true);
     try {
       exportFilteredStaffPDF(allFilteredStaff, {
@@ -872,14 +879,14 @@ export default function App() {
           stats={dynamicStatusStats}
         />
 
-        {/* Action Bar: Showing Count on Left & Green PDF Export Button on Right */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-5 px-1">
+        {/* Action Bar: Showing Count on Left & Green PDF Export Button on Right (Always in same row on mobile) */}
+        <div className="flex flex-row items-center justify-between gap-2.5 mb-5 px-1">
           {/* Results Summary Count */}
-          <div className="text-xs sm:text-sm font-semibold text-slate-600">
+          <div className="text-xs sm:text-sm font-semibold text-slate-600 truncate min-w-0">
             {isLoading ? (
-              <span>Loading personnel directory...</span>
+              <span>Loading directory...</span>
             ) : totalCount === 0 ? (
-              <span>No matching records found</span>
+              <span>No records found</span>
             ) : (
               <span>
                 Showing <strong className="text-slate-900">{startItem.toLocaleString()} to {endItem.toLocaleString()}</strong> of{' '}
@@ -888,15 +895,27 @@ export default function App() {
             )}
           </div>
 
-          {/* Green PDF Export Button (Export PDF) */}
+          {/* Green PDF Export Button (Visible to all; Active if permitted, Inactive/Disabled by default for User role) */}
           <button
             onClick={handleExportPDF}
-            disabled={isLoading || totalCount === 0 || isExportingPDF}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-bold rounded-xl shadow-md shadow-emerald-600/20 hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shrink-0"
-            title="Download formatted PDF report for current filter"
+            disabled={isLoading || totalCount === 0 || isExportingPDF || !canExportPdf}
+            className={`inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 text-xs font-bold rounded-xl transition-all shrink-0 select-none ${
+              !canExportPdf
+                ? 'bg-slate-200/90 border border-slate-300 text-slate-400 opacity-60 cursor-not-allowed shadow-none'
+                : 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-md shadow-emerald-600/20 hover:shadow-lg cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed'
+            }`}
+            title={
+              !canExportPdf
+                ? 'PDF export is restricted for your account. Contact an administrator to enable PDF export permission.'
+                : 'Download formatted PDF report for current filter'
+            }
           >
-            <FileDown className="w-4 h-4" />
-            <span>{isExportingPDF ? 'Generating PDF...' : 'Export PDF'}</span>
+            {!canExportPdf ? (
+              <Lock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-400" />
+            ) : (
+              <FileDown className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            )}
+            <span>{isExportingPDF ? 'Generating...' : 'Export PDF'}</span>
           </button>
         </div>
 

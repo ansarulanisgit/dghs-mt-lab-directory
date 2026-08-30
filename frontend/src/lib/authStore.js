@@ -7,11 +7,12 @@ const DEFAULT_USERS = [
     email: 'ansarul.contact@gmail.com',
     password: 'Ansarul@233',
     role: 'Admin',
+    canExportPdf: true,
     createdAt: '2026-08-28T00:00:00.000Z'
   }
 ];
 
-const STORAGE_USERS_KEY = 'dghs_users_v1';
+const STORAGE_USERS_KEY = 'dghs_users_v2';
 const STORAGE_SESSION_KEY = 'dghs_current_user_session';
 
 export function getUsers() {
@@ -26,7 +27,10 @@ export function getUsers() {
       localStorage.setItem(STORAGE_USERS_KEY, JSON.stringify(DEFAULT_USERS));
       return DEFAULT_USERS;
     }
-    return parsed;
+    return parsed.map(u => ({
+      ...u,
+      canExportPdf: u.role === 'Admin' ? true : Boolean(u.canExportPdf)
+    }));
   } catch {
     return DEFAULT_USERS;
   }
@@ -39,7 +43,12 @@ export function saveUsers(users) {
 export function getCurrentUser() {
   try {
     const raw = localStorage.getItem(STORAGE_SESSION_KEY);
-    return raw ? JSON.parse(raw) : null;
+    if (!raw) return null;
+    const user = JSON.parse(raw);
+    return {
+      ...user,
+      canExportPdf: user.role === 'Admin' ? true : Boolean(user.canExportPdf)
+    };
   } catch {
     return null;
   }
@@ -49,7 +58,11 @@ export function setCurrentUser(user) {
   if (!user) {
     localStorage.removeItem(STORAGE_SESSION_KEY);
   } else {
-    localStorage.setItem(STORAGE_SESSION_KEY, JSON.stringify(user));
+    const payload = {
+      ...user,
+      canExportPdf: user.role === 'Admin' ? true : Boolean(user.canExportPdf)
+    };
+    localStorage.setItem(STORAGE_SESSION_KEY, JSON.stringify(payload));
   }
 }
 
@@ -154,6 +167,7 @@ export function loginUser(identifier, password) {
       name: matched.name,
       email: matched.email,
       role: matched.role,
+      canExportPdf: matched.role === 'Admin' ? true : Boolean(matched.canExportPdf),
       loggedInAt: new Date().toISOString()
     };
     setCurrentUser(sessionData);
@@ -186,7 +200,7 @@ export function verifyAdminPassword(password) {
   return Boolean(adminMatch || cleanPass === 'Ansarul@233');
 }
 
-export function addUser({ name, email, password, role = 'User' }) {
+export function addUser({ name, email, password, role = 'User', canExportPdf = false }) {
   const users = getUsers();
   const cleanEmail = email.trim().toLowerCase();
   
@@ -194,12 +208,15 @@ export function addUser({ name, email, password, role = 'User' }) {
     throw new Error('A user with this email already exists.');
   }
 
+  const isRoleAdmin = role === 'Admin';
+
   const newUser = {
     id: `user-${Date.now()}`,
     name: name.trim(),
     email: email.trim(),
     password: password.trim(),
     role,
+    canExportPdf: isRoleAdmin ? true : Boolean(canExportPdf),
     createdAt: new Date().toISOString()
   };
 
@@ -208,7 +225,7 @@ export function addUser({ name, email, password, role = 'User' }) {
   return newUser;
 }
 
-export function updateUser(id, { name, email, password, role }) {
+export function updateUser(id, { name, email, password, role, canExportPdf }) {
   const users = getUsers();
   const userIdx = users.findIndex(u => u.id === id);
   if (userIdx === -1) throw new Error('User not found.');
@@ -217,12 +234,16 @@ export function updateUser(id, { name, email, password, role }) {
   const emailConflict = users.find(u => u.id !== id && u.email.toLowerCase() === cleanEmail);
   if (emailConflict) throw new Error('Another user with this email already exists.');
 
+  const newRole = role || users[userIdx].role;
+  const isRoleAdmin = newRole === 'Admin';
+
   const updatedUser = {
     ...users[userIdx],
     name: name ? name.trim() : users[userIdx].name,
     email: email ? email.trim() : users[userIdx].email,
     password: password ? password.trim() : users[userIdx].password,
-    role: role || users[userIdx].role,
+    role: newRole,
+    canExportPdf: isRoleAdmin ? true : (canExportPdf !== undefined ? Boolean(canExportPdf) : Boolean(users[userIdx].canExportPdf)),
     updatedAt: new Date().toISOString()
   };
 
@@ -236,7 +257,8 @@ export function updateUser(id, { name, email, password, role }) {
       ...current,
       name: updatedUser.name,
       email: updatedUser.email,
-      role: updatedUser.role
+      role: updatedUser.role,
+      canExportPdf: updatedUser.canExportPdf
     });
   }
 

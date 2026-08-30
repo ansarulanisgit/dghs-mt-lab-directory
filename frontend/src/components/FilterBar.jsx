@@ -156,10 +156,10 @@ export default function FilterBar({
           {activeFilterCount > 0 && (
             <button
               onClick={onResetFilters}
-              className="hidden sm:flex px-3.5 py-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-600 hover:text-slate-900 text-xs font-semibold items-center gap-1.5 transition-colors cursor-pointer shrink-0"
+              className="hidden sm:flex px-3.5 py-2.5 rounded-xl border border-rose-200 bg-rose-50/90 hover:bg-rose-100 text-rose-800 text-xs font-bold items-center gap-1.5 transition-all cursor-pointer shadow-2xs shrink-0"
               title="Reset all active filters"
             >
-              <RotateCcw className="w-3.5 h-3.5" />
+              <RotateCcw className="w-3.5 h-3.5 text-rose-600" />
               <span>Reset ({activeFilterCount})</span>
             </button>
           )}
