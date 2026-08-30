@@ -45,7 +45,7 @@ export default function StaffCard({ staff, onSelect }) {
             <h3 className={`text-base sm:text-lg font-extrabold tracking-tight line-clamp-1 ${
               isAbolished ? 'text-slate-600 line-through' : isVacant ? 'text-amber-950 italic' : 'text-slate-900'
             }`} title={decodeHtmlEntities(staff.name)}>
-              {isAbolished ? 'Abolished Sanctioned Post' : isVacant ? 'Vacant Sanctioned Post' : decodeHtmlEntities(staff.name || 'Unnamed Personnel')}
+              {isAbolished ? 'Abolished Post' : isVacant ? 'Vacant Post' : decodeHtmlEntities(staff.name || 'Unnamed Personnel')}
             </h3>
             <p className="text-xs font-semibold text-emerald-700 mt-0.5 line-clamp-1">
               {decodeHtmlEntities(staff.designation || 'Medical Technologist')}

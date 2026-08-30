@@ -50,7 +50,7 @@ export default function StaffDetailModal({ staff, onClose }) {
             </div>
             <div>
               <h2 className="text-base sm:text-lg font-bold text-white leading-tight">
-                {isAbolished ? 'Abolished Sanctioned Post' : isVacant ? 'Vacant Sanctioned Post' : decodeHtmlEntities(staff.name || 'Unnamed Personnel')}
+                {isAbolished ? 'Abolished Post' : isVacant ? 'Vacant Post' : decodeHtmlEntities(staff.name || 'Unnamed Personnel')}
               </h2>
               <p className="text-xs text-emerald-200/90 font-medium mt-0.5">
                 {decodeHtmlEntities(staff.designation || 'Medical Technologist')}
