@@ -208,7 +208,7 @@ export async function runScraper(options = {}) {
       const division = raw.division_name || 'Dhaka';
       const district = raw.district_name || 'Dhaka';
       const upazila = raw.upazila_name || district;
-      const facility = raw.facility_name || `${upazila} Health Complex`;
+      const facility = raw.facility_name || `${upazila} Upazila Health Complex`;
 
       const record = {
         id: `post-${postId}-${idx}`,

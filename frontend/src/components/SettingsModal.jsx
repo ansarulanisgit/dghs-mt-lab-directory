@@ -12,7 +12,7 @@ import {
 } from '../lib/configStore';
 import { calculateTimeRemaining } from '../lib/countdownUtil';
 import {
-  getBackups, saveBackupSnapshot, restoreBackupById, getActiveBackupOverride, clearBackupOverride
+  getBackups, saveBackupSnapshot, restoreBackupById, getActiveBackupOverride, clearBackupOverride, deleteBackupById, MAX_BACKUPS
 } from '../lib/backupStore';
 
 export default function SettingsModal({ currentUser, onClose, onForceUpdate, dynamicStats, onManualSnapshot }) {
@@ -41,6 +41,7 @@ export default function SettingsModal({ currentUser, onClose, onForceUpdate, dyn
   const [backupsList, setBackupsList] = useState(getBackups());
   const [activeBackupOverride, setActiveBackupOverride] = useState(getActiveBackupOverride());
   const [restoringBackupId, setRestoringBackupId] = useState(null);
+  const [snapshotSuccess, setSnapshotSuccess] = useState(false);
 
   // User Management State
   const [userList, setUserList] = useState(getUsers());
@@ -165,10 +166,10 @@ export default function SettingsModal({ currentUser, onClose, onForceUpdate, dyn
     };
   }, []);
 
-  const handleRestoreBackup = (backupId) => {
+  const handleRestoreBackup = async (backupId) => {
     try {
       setRestoringBackupId(backupId);
-      const restored = restoreBackupById(backupId);
+      const restored = await restoreBackupById(backupId);
       setActiveBackupOverride(restored);
       triggerToast(`Restored "${restored.label}" (${restored.recordCount} records).`, 'success');
       setUpdateNotice(`Successfully restored "${restored.label}" (${restored.recordCount} records). Directory view is now displaying this version.`);
@@ -189,12 +190,43 @@ export default function SettingsModal({ currentUser, onClose, onForceUpdate, dyn
   };
 
   const handleCreateManualSnapshot = () => {
-    if (onManualSnapshot) {
-      onManualSnapshot();
-      setBackupsList(getBackups());
-      triggerToast('Manual backup snapshot created and saved in store.', 'success');
-      setUpdateNotice('Manual backup snapshot created and saved in store.');
-      setTimeout(() => setUpdateNotice(''), 3500);
+    if (backupsList.length >= MAX_BACKUPS) {
+      triggerToast(`Maximum backup limit reached (${MAX_BACKUPS}/${MAX_BACKUPS}). Please delete an older backup first.`, 'error');
+      setUpdateNotice(`Backup storage limit reached (${MAX_BACKUPS}/${MAX_BACKUPS}). Please delete an older backup before taking a new one.`);
+      return;
+    }
+    try {
+      if (onManualSnapshot) {
+        onManualSnapshot();
+        const updated = getBackups();
+        setBackupsList(updated);
+        setSnapshotSuccess(true);
+        triggerToast(`Backup created and saved successfully! (${updated.length}/${MAX_BACKUPS} active backups)`, 'success');
+        setUpdateNotice(`Backup created and saved successfully! (${updated.length}/${MAX_BACKUPS} active backups)`);
+        setTimeout(() => {
+          setSnapshotSuccess(false);
+          setUpdateNotice('');
+        }, 3500);
+      }
+    } catch (err) {
+      triggerToast(err.message, 'error');
+      setUpdateNotice(err.message);
+    }
+  };
+
+  const handleDeleteBackup = (backupId) => {
+    if (window.confirm('Are you sure you want to permanently delete this backup version?')) {
+      try {
+        deleteBackupById(backupId);
+        const updated = getBackups();
+        setBackupsList(updated);
+        setActiveBackupOverride(getActiveBackupOverride());
+        triggerToast('Backup version deleted successfully.', 'info');
+        setUpdateNotice('Backup version deleted.');
+        setTimeout(() => setUpdateNotice(''), 3000);
+      } catch (err) {
+        triggerToast('Failed to delete backup: ' + err.message, 'error');
+      }
     }
   };
 
@@ -734,20 +766,29 @@ export default function SettingsModal({ currentUser, onClose, onForceUpdate, dyn
                     </ul>
                   </div>
 
-                  {/* Stored Dataset Backups (Last 2 Versions) for Rollback & Security */}
+                  {/* Stored Dataset Backups (Up to 5 Versions) for Rollback & Security */}
                   <div className="p-5 bg-gradient-to-br from-slate-50 to-teal-50/30 border border-slate-200 rounded-2xl space-y-3.5 shadow-xs">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200/80 pb-2.5">
                       <div>
-                        <h4 className="font-extrabold text-slate-900 text-sm flex items-center gap-2">
-                          <History className="w-4 h-4 text-emerald-600" />
-                          Security & Backup Storage (Last 2 Update Versions)
-                        </h4>
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-extrabold text-slate-900 text-sm flex items-center gap-2">
+                            <History className="w-4 h-4 text-emerald-600" />
+                            Security & Backup Storage (Up to 5 Active Backups)
+                          </h4>
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                            backupsList.length >= MAX_BACKUPS
+                              ? 'bg-amber-100 text-amber-900 border-amber-300'
+                              : 'bg-emerald-100 text-emerald-800 border-emerald-200'
+                          }`}>
+                            {backupsList.length} / {MAX_BACKUPS} Used
+                          </span>
+                        </div>
                         <p className="text-slate-500 text-xs mt-0.5">
-                          In case of any sync issue or data corruption, restore any of the last 2 stored versions:
+                          Store up to 5 point-in-time backup versions. You can restore or delete any version anytime:
                         </p>
                       </div>
 
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 shrink-0">
                         {activeBackupOverride && (
                           <button
                             onClick={handleClearOverride}
@@ -759,25 +800,54 @@ export default function SettingsModal({ currentUser, onClose, onForceUpdate, dyn
                         )}
                         <button
                           onClick={handleCreateManualSnapshot}
-                          className="px-3 py-1.5 bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
-                          title="Save current dataset as a new backup snapshot"
+                          className={`px-3.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-xs ${
+                            snapshotSuccess
+                              ? 'bg-emerald-600 text-white ring-2 ring-emerald-500 shadow-sm'
+                              : 'bg-white hover:bg-slate-100 border border-slate-200 text-slate-700'
+                          }`}
+                          title="Save current dataset as a new point-in-time backup"
                         >
-                          <Archive className="w-3.5 h-3.5 text-emerald-600" />
-                          <span>Take Snapshot</span>
+                          {snapshotSuccess ? (
+                            <>
+                              <Check className="w-3.5 h-3.5 text-white animate-bounce" />
+                              <span>Backup Created!</span>
+                            </>
+                          ) : (
+                            <>
+                              <Archive className="w-3.5 h-3.5 text-emerald-600" />
+                              <span>Take Backup</span>
+                            </>
+                          )}
                         </button>
                       </div>
                     </div>
 
-                    {/* Backups List (Max 2) */}
+                    {/* Snapshot Success Notification Banner */}
+                    {snapshotSuccess && (
+                      <div className="p-3 bg-emerald-50 border border-emerald-300 rounded-xl text-xs text-emerald-950 font-bold flex items-center gap-2 animate-in fade-in slide-in-from-top-1 duration-200">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                        <span>New point-in-time backup created and saved in Backup 1!</span>
+                      </div>
+                    )}
+
+                    {/* Limit Reached Warning Banner */}
+                    {backupsList.length >= MAX_BACKUPS && !snapshotSuccess && (
+                      <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900 font-medium flex items-center gap-2">
+                        <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                        <span>Maximum backup capacity reached ({MAX_BACKUPS}/{MAX_BACKUPS}). Please delete an older backup before creating a new one.</span>
+                      </div>
+                    )}
+
+                    {/* Backups List (Max 5) */}
                     {backupsList.length === 0 ? (
                       <div className="p-4 bg-white rounded-xl border border-slate-200 text-center space-y-2">
                         <Archive className="w-6 h-6 text-slate-400 mx-auto" />
-                        <p className="text-xs text-slate-600 font-medium">No previous backup snapshots stored yet.</p>
+                        <p className="text-xs text-slate-600 font-medium">No previous backup versions stored yet.</p>
                         <button
                           onClick={handleCreateManualSnapshot}
                           className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer"
                         >
-                          Create Initial Backup Snapshot
+                          Create Initial Backup
                         </button>
                       </div>
                     ) : (
@@ -798,20 +868,20 @@ export default function SettingsModal({ currentUser, onClose, onForceUpdate, dyn
                                   <span className={`px-2 py-0.5 rounded-md text-[11px] font-bold ${
                                     idx === 0 ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-700'
                                   }`}>
-                                    {idx === 0 ? 'Backup 1 (Latest Synced)' : 'Backup 2 (Previous Version)'}
+                                    Backup {idx + 1} {idx === 0 ? '(Latest)' : ''}
                                   </span>
                                   {isRestoredActive && (
                                     <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-100/90 px-2 py-0.5 rounded-md">
-                                      <CheckCircle2 className="w-3 h-3" /> Active View
+                                      <CheckCircle2 className="w-3 h-3" /> Active Restored View
                                     </span>
                                   )}
                                 </div>
                                 <div className="text-xs font-semibold text-slate-900">
-                                  {bk.label || 'Automated Update Snapshot'}
+                                  {bk.label || 'Automated Update Backup'}
                                 </div>
                                 <div className="text-[11px] text-slate-500 font-mono flex flex-wrap gap-x-3">
                                   <span>📅 {new Date(bk.createdAt).toLocaleString('en-GB')}</span>
-                                  <span>👥 {bk.recordCount?.toLocaleString()} posts ({bk.filledCount} filled, {bk.vacantCount} vacant)</span>
+                                  <span>👥 {bk.recordCount?.toLocaleString()} posts ({bk.filledCount} filled, {bk.vacantCount} vacant, {bk.abolishedCount || 0} abolished)</span>
                                 </div>
                               </div>
 
@@ -824,9 +894,19 @@ export default function SettingsModal({ currentUser, onClose, onForceUpdate, dyn
                                       ? 'bg-emerald-200/60 text-emerald-800 cursor-default opacity-80'
                                       : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm hover:shadow-md'
                                   }`}
+                                  title="Restore this backup version into active view"
                                 >
                                   <RotateCcw className="w-3.5 h-3.5" />
-                                  <span>{isRestoredActive ? 'Currently Active' : 'Restore this Backup'}</span>
+                                  <span>{isRestoredActive ? 'Active View' : 'Restore'}</span>
+                                </button>
+
+                                <button
+                                  onClick={() => handleDeleteBackup(bk.id)}
+                                  className="px-2.5 py-1.5 rounded-xl text-xs font-bold text-rose-700 hover:text-rose-900 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition-colors flex items-center gap-1 cursor-pointer"
+                                  title="Delete this backup version"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                                  <span>Delete</span>
                                 </button>
                               </div>
                             </div>

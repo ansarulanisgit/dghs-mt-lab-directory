@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
-import { Search, RotateCcw, ArrowUpDown, ChevronDown, Calendar } from 'lucide-react';
+import { RotateCcw, ArrowUpDown, ChevronDown, Calendar } from 'lucide-react';
 import MultiSelectDropdown from './MultiSelectDropdown';
+import SearchAutocomplete from './SearchAutocomplete';
 import { 
   BANGLADESH_DIVISIONS, 
   BANGLADESH_DISTRICTS, 
@@ -11,6 +12,7 @@ import {
 export default function FilterBar({
   searchTerm,
   onSearchChange,
+  dataset = [],
   // 1. Designation Groups (Multi-select Dropdown)
   selectedDesignationGroups = [],
   onDesignationGroupsChange,
@@ -95,17 +97,13 @@ export default function FilterBar({
     <div className="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-xs mb-6 space-y-4">
       {/* Top Search & Primary Sort Controls */}
       <div className="flex flex-col sm:flex-row gap-3">
-        {/* Search Box */}
-        <div className="relative flex-1">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-          <input
-            type="text"
-            placeholder="Search by name, institute, designation, post ID, or HRIS ID..."
-            value={searchTerm}
-            onChange={(e) => onSearchChange(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all placeholder:text-slate-400"
-          />
-        </div>
+        {/* Search Autocomplete Box */}
+        <SearchAutocomplete
+          value={searchTerm}
+          onChange={onSearchChange}
+          dataset={dataset}
+          placeholder="Search by name, institute, designation, post ID, or HRIS ID..."
+        />
 
         {/* Right Controls: Hide Past PRL Toggle + Sort Dropdown & Reset */}
         <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 shrink-0">

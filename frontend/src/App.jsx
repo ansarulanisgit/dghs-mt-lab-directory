@@ -238,8 +238,8 @@ export default function App() {
   // Initialize initial backup snapshot if none exists
   useEffect(() => {
     const existing = getBackups();
-    if (existing.length === 0 && MOCK_STAFF && MOCK_STAFF.length > 0) {
-      saveBackupSnapshot(MOCK_STAFF, 'Initial Baseline Snapshot (v1.0)');
+    if (existing.length === 0 && MOCK_STAFF && MOCK_STAFF.length >= 10000) {
+      saveBackupSnapshot(MOCK_STAFF, 'Baseline 10,027 Dataset Backup (v2.0)', true);
     }
   }, []);
 
@@ -617,8 +617,8 @@ export default function App() {
   // Safe Force Update with Automatic Backup Snapshot & Error Protection
   const handleForceUpdate = async () => {
     try {
-      // 1. Automatically snapshot current dataset before updating
-      saveBackupSnapshot(activeDataset, `Pre-Sync Snapshot (${new Date().toLocaleTimeString('en-GB')})`);
+      // 1. Automatically backup current dataset before updating (auto mode: automatically trims oldest if 5 limit reached)
+      saveBackupSnapshot(activeDataset, `Pre-Sync Backup (${new Date().toLocaleTimeString('en-GB')})`, true);
 
       // 2. Perform sync timestamp update
       const newTimestamp = new Date().toISOString();
@@ -637,9 +637,9 @@ export default function App() {
     }
   };
 
-  // Create Manual Snapshot from SettingsModal
+  // Create Manual Backup from SettingsModal
   const handleManualSnapshot = () => {
-    saveBackupSnapshot(activeDataset, `Manual Admin Snapshot (${new Date().toLocaleDateString('en-GB')} ${new Date().toLocaleTimeString('en-GB')})`);
+    return saveBackupSnapshot(activeDataset, `Manual Backup (${new Date().toLocaleDateString('en-GB')} ${new Date().toLocaleTimeString('en-GB')})`, false);
   };
 
   const handleExitRestoredView = () => {
@@ -847,6 +847,7 @@ export default function App() {
         <FilterBar
           searchTerm={searchTerm}
           onSearchChange={setSearchTerm}
+          dataset={activeDataset}
           selectedDesignationGroups={selectedDesignationGroups}
           onDesignationGroupsChange={handleDesignationGroupsChange}
           designationGroupOptions={designationGroupOptions}
