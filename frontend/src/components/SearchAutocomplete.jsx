@@ -33,7 +33,7 @@ export default function SearchAutocomplete({
   const wrapperRef = useRef(null);
   const inputRef = useRef(null);
 
-  // Close dropdown on outside click
+  // Close dropdown on outside click/tap
   useEffect(() => {
     function handleClickOutside(event) {
       if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
@@ -41,7 +41,11 @@ export default function SearchAutocomplete({
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
   }, []);
 
   // Compute fast, prioritized suggestions across categories

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { Building2, MapPin, Phone, Calendar, ArrowRight, User, AlertCircle, CheckCircle2, Ban } from 'lucide-react';
 import { GenderBadge } from './GenderIcon';
 
@@ -12,7 +12,7 @@ function decodeHtmlEntities(str) {
     .replace(/&gt;/g, '>');
 }
 
-export default function StaffCard({ staff, onSelect, canViewPhone = true, canViewPrl = true, canViewHris = true }) {
+function StaffCard({ staff, onSelect, canViewPhone = true, canViewPrl = true, canViewHris = true }) {
   const isAbolished = staff.status === 'Abolished' || staff.status_name === 'Abolished' || staff.name === '[Abolished Post]';
   const isVacant = !isAbolished && (staff.status === 'Vacant' || staff.isVacant || !staff.name || staff.name === '[Vacant Post]');
   const isFilled = !isAbolished && !isVacant;
@@ -171,3 +171,5 @@ export default function StaffCard({ staff, onSelect, canViewPhone = true, canVie
     </div>
   );
 }
+
+export default memo(StaffCard);

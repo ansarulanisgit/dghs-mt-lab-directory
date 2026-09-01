@@ -1,4 +1,4 @@
-﻿-- =========================================================================
+-- =========================================================================
 -- DGHS EMPLOYEE DIRECTORY: MASTER UNIVERSAL DATABASE SCHEMA
 -- =========================================================================
 
@@ -119,23 +119,16 @@ CREATE POLICY "Public Read pdf_columns_config" ON public.pdf_columns_config FOR 
 CREATE POLICY "Public Write pdf_columns_config" ON public.pdf_columns_config FOR ALL USING (true) WITH CHECK (true);
 
 -- =========================================================================
--- REALTIME REPLICATION (Instant Multi-Device Synchronization)
+-- HIGH-SPEED QUERY OPTIMIZATION INDEXES
 -- =========================================================================
-DO $DO_BLOCK$
-BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_publication_tables WHERE pubname = 'supabase_realtime' AND tablename = 'scrape_metadata') THEN
-        ALTER PUBLICATION supabase_realtime ADD TABLE public.scrape_metadata;
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM pg_publication_tables WHERE pubname = 'supabase_realtime' AND tablename = 'app_users') THEN
-        ALTER PUBLICATION supabase_realtime ADD TABLE public.app_users;
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM pg_publication_tables WHERE pubname = 'supabase_realtime' AND tablename = 'staff_backups') THEN
-        ALTER PUBLICATION supabase_realtime ADD TABLE public.staff_backups;
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM pg_publication_tables WHERE pubname = 'supabase_realtime' AND tablename = 'system_config') THEN
-        ALTER PUBLICATION supabase_realtime ADD TABLE public.system_config;
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM pg_publication_tables WHERE pubname = 'supabase_realtime' AND tablename = 'pdf_columns_config') THEN
-        ALTER PUBLICATION supabase_realtime ADD TABLE public.pdf_columns_config;
-    END IF;
-END $DO_BLOCK$;
+CREATE INDEX IF NOT EXISTS idx_staff_post_id ON public.staff_records (post_id);
+CREATE INDEX IF NOT EXISTS idx_staff_status ON public.staff_records (status);
+CREATE INDEX IF NOT EXISTS idx_staff_division ON public.staff_records (division);
+CREATE INDEX IF NOT EXISTS idx_staff_district ON public.staff_records (district);
+CREATE INDEX IF NOT EXISTS idx_staff_upazila ON public.staff_records (upazila);
+CREATE INDEX IF NOT EXISTS idx_staff_designation_group ON public.staff_records (designation_group);
+CREATE INDEX IF NOT EXISTS idx_staff_discipline ON public.staff_records (discipline);
+CREATE INDEX IF NOT EXISTS idx_staff_prl_date ON public.staff_records (prl_date);
+CREATE INDEX IF NOT EXISTS idx_staff_name ON public.staff_records (name);
+CREATE INDEX IF NOT EXISTS idx_staff_hris_id ON public.staff_records (hris_id);
+

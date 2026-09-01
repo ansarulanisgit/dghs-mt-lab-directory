@@ -11,7 +11,9 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
-          vendor: ['react', 'react-dom', 'lucide-react'],
+          vendor: ['react', 'react-dom'],
+          icons: ['lucide-react'],
+          supabase: ['@supabase/supabase-js'],
           pdf: ['jspdf', 'jspdf-autotable']
         }
       }
