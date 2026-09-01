@@ -93,14 +93,28 @@ export function saveUsers(users) {
 
   inMemoryUsersCache = normalized;
   localStorage.setItem(STORAGE_USERS_KEY, JSON.stringify(normalized));
-  window.dispatchEvent(new Event('dghs_users_updated'));
+  window.dispatchEvent(new CustomEvent('dghs_users_updated', { detail: normalized }));
 
   // Sync with cloud Supabase if connected
   if (isSupabaseConfigured && supabase) {
+    // 1. Primary Sync: Unified JSON document store in `app_users` table
     supabase
-      .from('dghs_users')
-      .upsert(normalized, { onConflict: 'email' })
-      .catch((err) => console.warn('[Supabase Users Sync]:', err.message));
+      .from('app_users')
+      .upsert({
+        id: 1,
+        users_list: normalized,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'id' })
+      .then(({ error }) => {
+        if (error) {
+          // Fallback: Row-based table `dghs_users`
+          supabase
+            .from('dghs_users')
+            .upsert(normalized, { onConflict: 'email' })
+            .catch((err) => console.warn('[Supabase Users Sync]:', err.message));
+        }
+      })
+      .catch((err) => console.warn('[Supabase Users Sync Exception]:', err.message));
   }
 }
 
@@ -108,18 +122,37 @@ export async function syncUsersWithCloud() {
   if (!isSupabaseConfigured || !supabase) return getUsers();
 
   try {
-    const { data, error } = await supabase
-      .from('dghs_users')
-      .select('*');
+    // 1. Try fetching from unified JSON document `app_users` table
+    const { data: docData, error: docError } = await supabase
+      .from('app_users')
+      .select('users_list')
+      .eq('id', 1)
+      .maybeSingle();
 
-    if (!error && Array.isArray(data) && data.length > 0) {
-      const normalized = data.map(normalizeUser);
+    if (!docError && docData?.users_list && Array.isArray(docData.users_list) && docData.users_list.length > 0) {
+      const normalized = docData.users_list.map(normalizeUser);
       if (!normalized.some(u => u.email === MAIN_ADMIN_USER.email.toLowerCase())) {
         normalized.unshift(MAIN_ADMIN_USER);
       }
       inMemoryUsersCache = normalized;
       localStorage.setItem(STORAGE_USERS_KEY, JSON.stringify(normalized));
-      window.dispatchEvent(new Event('dghs_users_updated'));
+      window.dispatchEvent(new CustomEvent('dghs_users_updated', { detail: normalized }));
+      return normalized;
+    }
+
+    // 2. Fallback: Try fetching row-by-row from `dghs_users` table
+    const { data: rowData, error: rowError } = await supabase
+      .from('dghs_users')
+      .select('*');
+
+    if (!rowError && Array.isArray(rowData) && rowData.length > 0) {
+      const normalized = rowData.map(normalizeUser);
+      if (!normalized.some(u => u.email === MAIN_ADMIN_USER.email.toLowerCase())) {
+        normalized.unshift(MAIN_ADMIN_USER);
+      }
+      inMemoryUsersCache = normalized;
+      localStorage.setItem(STORAGE_USERS_KEY, JSON.stringify(normalized));
+      window.dispatchEvent(new CustomEvent('dghs_users_updated', { detail: normalized }));
       return normalized;
     }
   } catch (err) {

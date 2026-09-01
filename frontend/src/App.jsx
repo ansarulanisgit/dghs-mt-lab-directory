@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { supabase, isSupabaseConfigured, MOCK_STAFF, MOCK_METADATA } from './lib/supabaseClient';
-import { getCurrentUser, logoutUser } from './lib/authStore';
-import { getSystemConfig } from './lib/configStore';
+import { getCurrentUser, logoutUser, syncUsersWithCloud } from './lib/authStore';
+import { getSystemConfig, syncConfigWithCloud } from './lib/configStore';
 import { calculateTimeRemaining } from './lib/countdownUtil';
 import { exportFilteredStaffPDF } from './lib/pdfExport';
 import {
@@ -648,9 +648,38 @@ export default function App() {
     };
   }, [fetchStaff]);
 
-  // Synchronize PDF columns configuration from cloud on startup
+  // Synchronize Cloud Users, Configuration & PDF Columns on startup
   useEffect(() => {
+    syncUsersWithCloud();
+    syncConfigWithCloud();
     syncPdfColumnsWithCloud();
+
+    // Listen for realtime users changes from other devices
+    if (isSupabaseConfigured && supabase) {
+      const userChannel = supabase
+        .channel('app_users_live')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'app_users' }, () => {
+          syncUsersWithCloud();
+        })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'dghs_users' }, () => {
+          syncUsersWithCloud();
+        })
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(userChannel);
+      };
+    }
+  }, []);
+
+  // Listen to local user updates to refresh active session
+  useEffect(() => {
+    const handleUserUpdate = () => {
+      const active = getCurrentUser();
+      if (active) setCurrentUser(active);
+    };
+    window.addEventListener('dghs_users_updated', handleUserUpdate);
+    return () => window.removeEventListener('dghs_users_updated', handleUserUpdate);
   }, []);
 
   const handleLogout = () => {

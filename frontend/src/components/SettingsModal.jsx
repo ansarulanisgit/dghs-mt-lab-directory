@@ -6,7 +6,7 @@ import {
   FileText, Columns3, CheckSquare, Sliders, GripVertical, ArrowUp, ArrowDown, Move
 } from 'lucide-react';
 import {
-  getUsers, addUser, updateUser, deleteUser, verifyAdminPassword
+  getUsers, addUser, updateUser, deleteUser, verifyAdminPassword, syncUsersWithCloud
 } from '../lib/authStore';
 import {
   getSystemConfig, saveSystemConfig, resetSystemConfig, syncConfigWithCloud
@@ -79,14 +79,32 @@ export default function SettingsModal({ currentUser, onClose, onForceUpdate, dyn
     }
   }, [currentUser, isSuperAdmin]);
 
-  // Synchronize dynamic cloud config & PDF column settings on mount
+  // Synchronize dynamic cloud config, users & PDF column settings on mount
   useEffect(() => {
+    syncUsersWithCloud().then(users => {
+      if (users && Array.isArray(users) && users.length > 0) {
+        setUserList(users);
+      }
+    });
     syncConfigWithCloud().then(cfg => {
       if (cfg) setConfig(cfg);
     });
     syncPdfColumnsWithCloud().then(pCfg => {
       if (pCfg) setPdfConfig(pCfg);
     });
+  }, []);
+
+  // Listen for realtime user list updates
+  useEffect(() => {
+    const handleUsersChanged = (e) => {
+      if (e.detail && Array.isArray(e.detail)) {
+        setUserList(e.detail);
+      } else {
+        setUserList(getUsers());
+      }
+    };
+    window.addEventListener('dghs_users_updated', handleUsersChanged);
+    return () => window.removeEventListener('dghs_users_updated', handleUsersChanged);
   }, []);
 
   // Live Countdown universally based on configured interval days & central anchor timestamp
