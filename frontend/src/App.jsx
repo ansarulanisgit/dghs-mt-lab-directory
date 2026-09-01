@@ -5,7 +5,7 @@ import { getSystemConfig, syncConfigWithCloud } from './lib/configStore';
 import { calculateTimeRemaining } from './lib/countdownUtil';
 import { exportFilteredStaffPDF } from './lib/pdfExport';
 import {
-  getBackups, saveBackupSnapshot, getActiveBackupOverride, clearBackupOverride
+  getBackups, saveBackupSnapshot, getActiveBackupOverride, clearBackupOverride, syncBackupsWithCloud
 } from './lib/backupStore';
 import { syncPdfColumnsWithCloud } from './lib/pdfConfigStore';
 import StaffCard from './components/StaffCard';
@@ -648,26 +648,36 @@ export default function App() {
     };
   }, [fetchStaff]);
 
-  // Synchronize Cloud Users, Configuration & PDF Columns on startup
+  // Synchronize Cloud Users, Backups, Configuration & PDF Columns on startup
   useEffect(() => {
     syncUsersWithCloud();
+    syncBackupsWithCloud();
     syncConfigWithCloud();
     syncPdfColumnsWithCloud();
 
-    // Listen for realtime users changes from other devices
+    // Multi-Table Realtime Subscriptions for seamless cross-device synchronization
     if (isSupabaseConfigured && supabase) {
-      const userChannel = supabase
-        .channel('app_users_live')
+      const liveSyncChannel = supabase
+        .channel('universal_app_sync_live')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'app_users' }, () => {
           syncUsersWithCloud();
         })
         .on('postgres_changes', { event: '*', schema: 'public', table: 'dghs_users' }, () => {
           syncUsersWithCloud();
         })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'staff_backups' }, () => {
+          syncBackupsWithCloud();
+        })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'system_config' }, () => {
+          syncConfigWithCloud();
+        })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'pdf_columns_config' }, () => {
+          syncPdfColumnsWithCloud();
+        })
         .subscribe();
 
       return () => {
-        supabase.removeChannel(userChannel);
+        supabase.removeChannel(liveSyncChannel);
       };
     }
   }, []);
