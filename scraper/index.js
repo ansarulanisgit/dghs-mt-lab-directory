@@ -252,21 +252,38 @@ export async function runScraper(options = {}) {
       finalRecords = [...uniqueRecords, ...padding];
     }
 
-    // Save and rotate local backups
+    // Save and rotate local backups (up to 5 versions)
     const recordsPath = path.join(__dirname, 'scraped_records.json');
     const frontendRecordsPath = path.join(__dirname, '..', 'frontend', 'src', 'lib', 'scraped_records.json');
-    const backup1Path = path.join(__dirname, 'scraped_records_backup_1.json');
-    const backup2Path = path.join(__dirname, 'scraped_records_backup_2.json');
+    const syncMetaPath = path.join(__dirname, 'sync_metadata.json');
+    const frontendSyncMetaPath = path.join(__dirname, '..', 'frontend', 'src', 'lib', 'sync_metadata.json');
+
+    const metadataObj = {
+      last_run_at: new Date().toISOString(),
+      record_count: finalRecords.length,
+      filled_count: finalRecords.filter(r => r.status === 'Filled').length,
+      vacant_count: finalRecords.filter(r => r.status === 'Vacant').length,
+      abolished_count: finalRecords.filter(r => r.status === 'Abolished').length,
+      schedule_interval_days: 7
+    };
 
     if (finalRecords.length > 0) {
-      if (fs.existsSync(backup1Path)) {
-        fs.copyFileSync(backup1Path, backup2Path);
+      // Rotate 5 backups: 4->5, 3->4, 2->3, 1->2, current->1
+      for (let b = 4; b >= 1; b--) {
+        const src = path.join(__dirname, `scraped_records_backup_${b}.json`);
+        const dst = path.join(__dirname, `scraped_records_backup_${b + 1}.json`);
+        if (fs.existsSync(src)) {
+          fs.copyFileSync(src, dst);
+        }
       }
       if (fs.existsSync(recordsPath)) {
-        fs.copyFileSync(recordsPath, backup1Path);
+        fs.copyFileSync(recordsPath, path.join(__dirname, 'scraped_records_backup_1.json'));
       }
+
       fs.writeFileSync(recordsPath, JSON.stringify(finalRecords, null, 2), 'utf8');
       fs.writeFileSync(frontendRecordsPath, JSON.stringify(finalRecords, null, 2), 'utf8');
+      fs.writeFileSync(syncMetaPath, JSON.stringify(metadataObj, null, 2), 'utf8');
+      fs.writeFileSync(frontendSyncMetaPath, JSON.stringify(metadataObj, null, 2), 'utf8');
     }
 
     // Step 4: Upsert to Supabase if configured

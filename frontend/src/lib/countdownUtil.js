@@ -1,18 +1,18 @@
-// Robust countdown utility for automated DGHS scraper schedules
+// Robust centralized countdown utility for automated DGHS scraper schedules
+// Universally synchronized across all devices, browsers, and deployments.
 
-export function calculateTimeRemaining(intervalDays = 7) {
+export function calculateTimeRemaining(intervalDays = 7, anchorTime = null) {
   const now = new Date();
   const days = parseInt(intervalDays, 10) || 7;
 
-  // Retrieve or initialize last sync anchor time
-  let lastSyncStr = typeof window !== 'undefined' ? localStorage.getItem('dghs_last_sync_time') : null;
-  let lastSync = lastSyncStr ? new Date(lastSyncStr) : null;
-  
+  let lastSync = null;
+  if (anchorTime) {
+    lastSync = new Date(anchorTime);
+  }
+
+  // Universal persistent baseline anchor
   if (!lastSync || isNaN(lastSync.getTime())) {
-    lastSync = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0));
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('dghs_last_sync_time', lastSync.toISOString());
-    }
+    lastSync = new Date('2026-08-30T19:50:00.000Z');
   }
 
   // Calculate target: advance in intervalDays increments until target > now

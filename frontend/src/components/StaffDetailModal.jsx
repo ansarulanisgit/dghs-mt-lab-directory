@@ -12,7 +12,7 @@ function decodeHtmlEntities(str) {
     .replace(/&gt;/g, '>');
 }
 
-export default function StaffDetailModal({ staff, onClose }) {
+export default function StaffDetailModal({ staff, onClose, canViewPhone = true, canViewPrl = true, canViewHris = true }) {
   if (!staff) return null;
 
   const isAbolished = staff.status === 'Abolished' || staff.status_name === 'Abolished' || staff.name === '[Abolished Post]';
@@ -137,7 +137,13 @@ export default function StaffDetailModal({ staff, onClose }) {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <span className="text-slate-500 text-xs block">HRIS ID:</span>
-                  <span className="font-mono font-bold text-slate-800 text-sm">{staff.hris_id || 'N/A'}</span>
+                  {canViewHris ? (
+                    <span className="font-mono font-bold text-slate-800 text-sm">{staff.hris_id || 'N/A'}</span>
+                  ) : (
+                    <span className="font-mono font-semibold text-slate-400 text-xs bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200 inline-block mt-0.5" title="HRIS ID access restricted">
+                      •••••••• (Restricted)
+                    </span>
+                  )}
                 </div>
                 <div>
                   <span className="text-slate-500 text-xs block mb-1">Gender:</span>
@@ -153,9 +159,15 @@ export default function StaffDetailModal({ staff, onClose }) {
                 </div>
                 <div>
                   <span className="text-slate-500 text-xs block">PRL Date (DOB + 59y):</span>
-                  <span className="font-extrabold text-rose-950 text-sm bg-rose-50 px-2.5 py-0.5 rounded-lg border border-rose-200 inline-block mt-0.5">
-                    {formatFullDate(staff.prl_date)}
-                  </span>
+                  {canViewPrl ? (
+                    <span className="font-extrabold text-rose-950 text-sm bg-rose-50 px-2.5 py-0.5 rounded-lg border border-rose-200 inline-block mt-0.5">
+                      {formatFullDate(staff.prl_date)}
+                    </span>
+                  ) : (
+                    <span className="font-semibold text-slate-400 text-xs bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200 inline-flex items-center gap-1 mt-0.5" title="PRL date restricted">
+                      <span>Restricted</span>
+                    </span>
+                  )}
                 </div>
                 {staff.national_id && (
                   <div>
@@ -166,13 +178,19 @@ export default function StaffDetailModal({ staff, onClose }) {
                 {(staff.contact_no || staff.contact_info) && (
                   <div className="sm:col-span-2">
                     <span className="text-slate-500 text-xs block">Contact Number:</span>
-                    <a
-                      href={`tel:${(staff.contact_no || staff.contact_info).split(',')[0]}`}
-                      className="font-mono font-bold text-emerald-700 hover:text-emerald-900 hover:underline flex items-center gap-1.5 mt-0.5"
-                    >
-                      <Phone className="w-3.5 h-3.5" />
-                      {staff.contact_no || staff.contact_info}
-                    </a>
+                    {canViewPhone ? (
+                      <a
+                        href={`tel:${(staff.contact_no || staff.contact_info).split(',')[0]}`}
+                        className="font-mono font-bold text-emerald-700 hover:text-emerald-900 hover:underline flex items-center gap-1.5 mt-0.5"
+                      >
+                        <Phone className="w-3.5 h-3.5" />
+                        {staff.contact_no || staff.contact_info}
+                      </a>
+                    ) : (
+                      <span className="font-mono text-slate-400 text-xs font-semibold flex items-center gap-1.5 mt-0.5" title="Phone number restricted">
+                        <span>•••••••••• (Restricted)</span>
+                      </span>
+                    )}
                   </div>
                 )}
                 {staff.additional_roles && (

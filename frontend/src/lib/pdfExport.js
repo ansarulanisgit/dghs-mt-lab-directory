@@ -1,5 +1,6 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { getPdfColumnsConfig, AVAILABLE_PDF_COLUMNS } from './pdfConfigStore';
 
 function formatDDMMYYYY(dateStr) {
   if (!dateStr) return '-';
@@ -22,6 +23,71 @@ function formatDDMMYYYY(dateStr) {
   }
 }
 
+// Column value extractors and styling definitions
+const COLUMN_HANDLERS = {
+  sl: {
+    label: 'SL',
+    extract: (item, index) => String(index + 1),
+    style: { halign: 'center', cellWidth: 24 }
+  },
+  post_id: {
+    label: 'POST ID',
+    extract: (item) => item.post_id || '-',
+    style: { halign: 'center', cellWidth: 46, fontStyle: 'bold' }
+  },
+  name: {
+    label: 'NAME',
+    extract: (item, index, isAbolished, isVacant) => 
+      isAbolished ? '[Abolished Post]' : isVacant ? '[Vacant Post]' : (item.name || 'N/A'),
+    style: { halign: 'left', cellWidth: 120, fontStyle: 'bold' }
+  },
+  designation: {
+    label: 'DESIGNATION',
+    extract: (item) => item.designation || 'Medical Technologist',
+    style: { halign: 'left', cellWidth: 110 }
+  },
+  status: {
+    label: 'STATUS',
+    extract: (item) => item.status || 'Vacant',
+    style: { halign: 'center', cellWidth: 46, fontStyle: 'bold' }
+  },
+  hris_id: {
+    label: 'HRIS ID',
+    extract: (item, index, isAbolished, isVacant, isFilled) => 
+      isFilled ? (item.hris_id || '-') : '-',
+    style: { halign: 'center', cellWidth: 50 }
+  },
+  contact_no: {
+    label: 'CONTACT NO',
+    extract: (item, index, isAbolished, isVacant, isFilled) => 
+      isFilled ? (item.contact_info || '-') : '-',
+    style: { halign: 'center', cellWidth: 68 }
+  },
+  nid: {
+    label: 'NID',
+    extract: (item, index, isAbolished, isVacant, isFilled) => 
+      isFilled ? (item.nid || item.national_id || '-') : '-',
+    style: { halign: 'center', cellWidth: 68 }
+  },
+  address: {
+    label: 'ADDRESS',
+    extract: (item) => 
+      [item.upazila, item.district, item.division].filter(Boolean).join(', ') || item.address || '-',
+    style: { halign: 'left', cellWidth: 90 }
+  },
+  institute: {
+    label: 'INSTITUTE / FACILITY',
+    extract: (item) => item.current_institute || 'DGHS Facility',
+    style: { halign: 'left' } // Flex width
+  },
+  prl_date: {
+    label: 'PRL DATE',
+    extract: (item, index, isAbolished, isVacant, isFilled) => 
+      isFilled ? formatDDMMYYYY(item.prl_date) : '-',
+    style: { halign: 'center', cellWidth: 58, fontStyle: 'bold', textColor: [6, 95, 70] }
+  }
+};
+
 export function exportFilteredStaffPDF(staffList, filterContext = {}) {
   const doc = new jsPDF({
     orientation: 'landscape',
@@ -31,6 +97,28 @@ export function exportFilteredStaffPDF(staffList, filterContext = {}) {
 
   const { division, district, upazila, status, designationGroups, disciplines, majorDisciplines, designations } = filterContext;
   const activeDisciplines = disciplines || majorDisciplines || [];
+
+  // Active columns configuration
+  const currentConfig = filterContext.pdfColumnsConfig || getPdfColumnsConfig();
+  const selectedIds = (currentConfig.selectedColumns && currentConfig.selectedColumns.length > 0)
+    ? currentConfig.selectedColumns
+    : ['sl', 'post_id', 'name', 'designation', 'status', 'hris_id', 'contact_no', 'institute', 'prl_date'];
+
+  const order = (currentConfig.columnOrder && currentConfig.columnOrder.length > 0)
+    ? currentConfig.columnOrder
+    : AVAILABLE_PDF_COLUMNS.map(c => c.id);
+
+  const columnsById = {};
+  AVAILABLE_PDF_COLUMNS.forEach(col => {
+    columnsById[col.id] = col;
+  });
+
+  // Filter and order active columns according to user's custom arranged order
+  const activeColumns = order
+    .filter(id => selectedIds.includes(id) && columnsById[id])
+    .map(id => columnsById[id]);
+
+  const effectiveColumns = activeColumns.length > 0 ? activeColumns : AVAILABLE_PDF_COLUMNS;
 
   // Determine Scope Title
   let scopeTitle = 'ALL BANGLADESH';
@@ -56,23 +144,31 @@ export function exportFilteredStaffPDF(staffList, filterContext = {}) {
   const mainTitle = `${groupTitle} (${scopeTitle})`;
   const subTitle = `Total Filtered Records: ${staffList.length} | Source: DGHS Human Resource Management System (HRIS)`;
 
-  // Prepare table rows (Discipline & Location removed)
+  // Prepare table headers
+  const tableHeaders = effectiveColumns.map(col => col.label);
+
+  // Prepare table rows dynamically based on enabled columns
   const tableData = staffList.map((item, index) => {
     const isAbolished = item.status === 'Abolished' || item.name === '[Abolished Post]';
     const isVacant = !isAbolished && (item.status === 'Vacant' || item.name === '[Vacant Post]');
     const isFilled = !isAbolished && !isVacant;
 
-    return [
-      String(index + 1),
-      item.post_id || '-',
-      isAbolished ? '[Abolished Post]' : isVacant ? '[Vacant Post]' : (item.name || 'N/A'),
-      item.designation || 'Medical Technologist',
-      item.status || 'Vacant',
-      isFilled ? (item.hris_id || '-') : '-',
-      isFilled ? (item.contact_info || '-') : '-',
-      item.current_institute || 'DGHS Facility',
-      isFilled ? formatDDMMYYYY(item.prl_date) : '-'
-    ];
+    return effectiveColumns.map(col => {
+      const handler = COLUMN_HANDLERS[col.id];
+      if (handler && typeof handler.extract === 'function') {
+        return handler.extract(item, index, isAbolished, isVacant, isFilled);
+      }
+      return item[col.id] || '-';
+    });
+  });
+
+  // Dynamic Column Styles
+  const columnStyles = {};
+  effectiveColumns.forEach((col, idx) => {
+    const handler = COLUMN_HANDLERS[col.id];
+    if (handler && handler.style) {
+      columnStyles[idx] = handler.style;
+    }
   });
 
   const today = new Date();
@@ -83,17 +179,7 @@ export function exportFilteredStaffPDF(staffList, filterContext = {}) {
   });
 
   autoTable(doc, {
-    head: [[
-      'SL',
-      'POST ID',
-      'PERSONNEL NAME',
-      'DESIGNATION',
-      'STATUS',
-      'HRIS ID',
-      'CONTACT NO',
-      'INSTITUTE / FACILITY',
-      'PRL DATE'
-    ]],
+    head: [tableHeaders],
     body: tableData,
     startY: 58,
     margin: { top: 60, bottom: 35, left: 20, right: 20 },
@@ -117,17 +203,7 @@ export function exportFilteredStaffPDF(staffList, filterContext = {}) {
     alternateRowStyles: {
       fillColor: [240, 253, 244] // Emerald-50 tint
     },
-    columnStyles: {
-      0: { halign: 'center', cellWidth: 24 }, // SL
-      1: { halign: 'center', cellWidth: 48, fontStyle: 'bold' }, // POST ID
-      2: { halign: 'left', cellWidth: 140, fontStyle: 'bold' }, // NAME
-      3: { halign: 'left', cellWidth: 140 }, // DESIGNATION
-      4: { halign: 'center', cellWidth: 48, fontStyle: 'bold' }, // STATUS
-      5: { halign: 'center', cellWidth: 54 }, // HRIS
-      6: { halign: 'center', cellWidth: 70 }, // PHONE
-      7: { halign: 'left' }, // INSTITUTE (auto flex)
-      8: { halign: 'center', cellWidth: 62, fontStyle: 'bold', textColor: [6, 95, 70] } // PRL DATE
-    },
+    columnStyles,
     didDrawPage: (data) => {
       const pageWidth = doc.internal.pageSize.width || doc.internal.pageSize.getWidth();
       const pageHeight = doc.internal.pageSize.height || doc.internal.pageSize.getHeight();

@@ -7,12 +7,14 @@ import { exportFilteredStaffPDF } from './lib/pdfExport';
 import {
   getBackups, saveBackupSnapshot, getActiveBackupOverride, clearBackupOverride
 } from './lib/backupStore';
+import { syncPdfColumnsWithCloud } from './lib/pdfConfigStore';
 import StaffCard from './components/StaffCard';
 import FilterBar from './components/FilterBar';
 import Pagination from './components/Pagination';
 import StaffDetailModal from './components/StaffDetailModal';
 import SettingsModal from './components/SettingsModal';
 import LoginScreen from './components/LoginScreen';
+import PermissionDeniedModal from './components/PermissionDeniedModal';
 import {
   Users, Clock, Settings, LogOut, AlertCircle, RefreshCw, Layers, User, FileDown, Timer,
   AlertTriangle, Info, X, ShieldAlert, CheckCircle2, ChevronUp, Lock
@@ -24,9 +26,16 @@ export default function App() {
   // Authentication State
   const [currentUser, setCurrentUser] = useState(getCurrentUser());
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [permissionDeniedFeature, setPermissionDeniedFeature] = useState(null);
 
-  // Check if current user has permission to export PDF reports
-  const canExportPdf = currentUser?.role === 'Admin' || Boolean(currentUser?.canExportPdf);
+  // Check granular permissions for current user (Super Admin & Admin have full access)
+  const isSuperAdmin = currentUser?.isSuperAdmin || currentUser?.role === 'Super Admin' || (currentUser?.email || '').toLowerCase() === 'ansarul.contact@gmail.com';
+  const isFullAdmin = isSuperAdmin || currentUser?.role === 'Admin';
+  const canExportPdf = isFullAdmin || Boolean(currentUser?.canExportPdf);
+  const canViewHris = isFullAdmin || currentUser?.canViewHris !== false;
+  const canViewPhone = isFullAdmin || currentUser?.canViewPhone !== false;
+  const canViewPrl = isFullAdmin || currentUser?.canViewPrl !== false;
+  const canViewDetails = isFullAdmin || currentUser?.canViewDetails !== false;
 
   // Back to top floating button state (scroll threshold: 400px)
   const [showBackToTop, setShowBackToTop] = useState(false);
@@ -55,7 +64,7 @@ export default function App() {
   const [staffList, setStaffList] = useState([]);
   const [allFilteredStaff, setAllFilteredStaff] = useState([]); // For full PDF export
   const [totalCount, setTotalCount] = useState(0);
-  const [metadata, setMetadata] = useState(null);
+  const [metadata, setMetadata] = useState(MOCK_METADATA);
   const [isLoading, setIsLoading] = useState(true);
   const [isExportingPDF, setIsExportingPDF] = useState(false);
   const [error, setError] = useState(null);
@@ -257,12 +266,12 @@ export default function App() {
   // System & Branding Config State
   const [appConfig, setAppConfig] = useState(getSystemConfig());
 
-  // Live Countdown based on configured interval days & dynamic config
+  // Universal Central Live Countdown based on configured interval days & central anchor timestamp
   useEffect(() => {
     function updateCountdown() {
       const config = getSystemConfig();
       setAppConfig(config);
-      const text = calculateTimeRemaining(config.scheduleIntervalDays || 7);
+      const text = calculateTimeRemaining(config.scheduleIntervalDays || 7, metadata?.last_run_at || MOCK_METADATA.last_run_at);
       setCountdownText(text);
     }
 
@@ -275,7 +284,7 @@ export default function App() {
       clearInterval(interval);
       window.removeEventListener('dghs_config_updated', handleConfigUpdate);
     };
-  }, []);
+  }, [metadata]);
 
   // Debounce search input
   useEffect(() => {
@@ -609,26 +618,72 @@ export default function App() {
     }
   }, [fetchStaff, currentUser]);
 
+  // Fetch central metadata from Supabase (if configured) and listen for realtime updates
+  useEffect(() => {
+    if (!isSupabaseConfigured || !supabase) return;
+
+    supabase
+      .from('scrape_metadata')
+      .select('*')
+      .eq('id', 1)
+      .single()
+      .then(({ data, error }) => {
+        if (!error && data) {
+          setMetadata(data);
+        }
+      });
+
+    const channel = supabase
+      .channel('scrape_metadata_live')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'scrape_metadata' }, (payload) => {
+        if (payload.new) {
+          setMetadata(payload.new);
+          fetchStaff();
+        }
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [fetchStaff]);
+
+  // Synchronize PDF columns configuration from cloud on startup
+  useEffect(() => {
+    syncPdfColumnsWithCloud();
+  }, []);
+
   const handleLogout = () => {
     logoutUser();
     setCurrentUser(null);
   };
 
-  // Safe Force Update with Automatic Backup Snapshot & Error Protection
+  // Safe Force Update with Automatic Backup Snapshot & Universal Synchronization
   const handleForceUpdate = async () => {
     try {
       // 1. Automatically backup current dataset before updating (auto mode: automatically trims oldest if 5 limit reached)
-      saveBackupSnapshot(activeDataset, `Pre-Sync Backup (${new Date().toLocaleTimeString('en-GB')})`, true);
+      saveBackupSnapshot(activeDataset, `Pre-Update Backup (${new Date().toLocaleDateString('en-GB')} ${new Date().toLocaleTimeString('en-GB')})`, true);
 
       // 2. Perform sync timestamp update
       const newTimestamp = new Date().toISOString();
-      localStorage.setItem('dghs_last_sync_time', newTimestamp);
       setMetadata(prev => ({
         ...prev,
         last_run_at: newTimestamp
       }));
 
-      // 3. Refresh directory
+      // 3. If Supabase configured, update central cloud metadata
+      if (isSupabaseConfigured && supabase) {
+        await supabase
+          .from('scrape_metadata')
+          .upsert({
+            id: 1,
+            last_run_at: newTimestamp,
+            record_count: activeDataset.length,
+            failed_count: 0
+          }, { onConflict: 'id' });
+      }
+
+      // 4. Refresh directory
       await fetchStaff();
       setSyncErrorNotice(null);
     } catch (err) {
@@ -649,7 +704,7 @@ export default function App() {
 
   const handleExportPDF = () => {
     if (!canExportPdf) {
-      alert('PDF Export Restricted: Your account does not have permission to export PDF reports. Please contact an administrator to grant PDF export access.');
+      setPermissionDeniedFeature('PDF Report Export');
       return;
     }
     setIsExportingPDF(true);
@@ -670,6 +725,14 @@ export default function App() {
     } finally {
       setIsExportingPDF(false);
     }
+  };
+
+  const handleSelectStaff = (staff) => {
+    if (!canViewDetails) {
+      setPermissionDeniedFeature('View Full Details');
+      return;
+    }
+    setSelectedStaff(staff);
   };
 
   const formatTimestamp = (ts) => {
@@ -732,10 +795,10 @@ export default function App() {
 
               {/* User Actions Group (User pill, Settings, Logout) */}
               <div className="flex items-center gap-1.5 shrink-0">
-                {/* Current User Pill */}
-                <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white sm:bg-slate-100 border border-slate-200 text-slate-800 text-[11px] sm:text-xs font-semibold shadow-2xs sm:shadow-none">
-                  <User className="w-3 h-3 text-emerald-600" />
-                  <span>{currentUser.name}</span>
+                {/* Current User Pill (Showing only username) */}
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white sm:bg-slate-100 border border-slate-200 text-slate-800 text-[11px] sm:text-xs font-semibold shadow-2xs sm:shadow-none">
+                  <User className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>{currentUser.username || currentUser.name}</span>
                 </div>
 
                 {/* Password-Protected Settings Button */}
@@ -982,7 +1045,10 @@ export default function App() {
                 <StaffCard
                   key={staff.id || staff.hris_id || staff.post_id}
                   staff={staff}
-                  onSelect={setSelectedStaff}
+                  onSelect={handleSelectStaff}
+                  canViewHris={canViewHris}
+                  canViewPhone={canViewPhone}
+                  canViewPrl={canViewPrl}
                 />
               ))}
             </div>
@@ -1003,8 +1069,18 @@ export default function App() {
         <StaffDetailModal
           staff={selectedStaff}
           onClose={() => setSelectedStaff(null)}
+          canViewHris={canViewHris}
+          canViewPhone={canViewPhone}
+          canViewPrl={canViewPrl}
         />
       )}
+
+      {/* Permission Denied Feature Popup */}
+      <PermissionDeniedModal
+        isOpen={Boolean(permissionDeniedFeature)}
+        onClose={() => setPermissionDeniedFeature(null)}
+        featureName={permissionDeniedFeature}
+      />
 
       {/* Password-Protected Settings Modal */}
       {settingsOpen && (
@@ -1014,6 +1090,7 @@ export default function App() {
           onForceUpdate={handleForceUpdate}
           onManualSnapshot={handleManualSnapshot}
           dynamicStats={globalStats}
+          metadata={metadata}
         />
       )}
 
