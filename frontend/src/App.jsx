@@ -702,14 +702,14 @@ export default function App() {
     setActiveRestoredBackup(null);
   };
 
-  const handleExportPDF = () => {
+  const handleExportPDF = async () => {
     if (!canExportPdf) {
       setPermissionDeniedFeature('PDF Report Export');
       return;
     }
     setIsExportingPDF(true);
     try {
-      exportFilteredStaffPDF(allFilteredStaff, {
+      await exportFilteredStaffPDF(allFilteredStaff, {
         division: selectedDivision,
         district: selectedDistrict,
         upazila: selectedUpazila,

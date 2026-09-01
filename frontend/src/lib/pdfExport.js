@@ -88,7 +88,7 @@ const COLUMN_HANDLERS = {
   }
 };
 
-export function exportFilteredStaffPDF(staffList, filterContext = {}) {
+export async function exportFilteredStaffPDF(staffList, filterContext = {}) {
   const doc = new jsPDF({
     orientation: 'landscape',
     unit: 'pt',
@@ -245,5 +245,36 @@ export function exportFilteredStaffPDF(staffList, filterContext = {}) {
   // Filename formatting
   const sanitizedScope = scopeTitle.toLowerCase().replace(/[^a-z0-9]/g, '_');
   const filename = `dghs_employee_directory_${sanitizedScope}_${today.toISOString().split('T')[0]}.pdf`;
-  doc.save(filename);
+
+  // Detect mobile device or Android WebView
+  const isMobileOrWebView = typeof navigator !== 'undefined' && /android|iphone|ipad|ipod|mobile/i.test(navigator.userAgent || '');
+
+  try {
+    const pdfBlob = doc.output('blob');
+    const pdfFile = new File([pdfBlob], filename, { type: 'application/pdf' });
+
+    // 1. If Web Share API is available on mobile/WebView, trigger native Android Share / Save Sheet
+    if (isMobileOrWebView && typeof navigator !== 'undefined' && navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
+      try {
+        await navigator.share({
+          files: [pdfFile],
+          title: 'DGHS Directory PDF Report',
+          text: `DGHS Employee Directory PDF Report (${scopeTitle})`
+        });
+        return;
+      } catch (shareErr) {
+        if (shareErr?.name === 'AbortError') {
+          // User closed share dialog
+          return;
+        }
+        console.warn('Native share failed, falling back to download:', shareErr);
+      }
+    }
+
+    // 2. Standard browser download fallback
+    doc.save(filename);
+  } catch (err) {
+    console.warn('Custom blob save failed, attempting standard doc.save:', err);
+    doc.save(filename);
+  }
 }
