@@ -24,6 +24,7 @@ function highlightMatch(text, query) {
 export default function SearchAutocomplete({
   value = '',
   onChange,
+  searchMeta = null,
   dataset = [],
   placeholder = 'Search by name, institute, designation, post ID, or HRIS ID...',
   className = ''
@@ -160,7 +161,6 @@ export default function SearchAutocomplete({
         });
       }
 
-      // Cap checks to keep search extremely fast
       if (
         nameMatches.length >= 4 &&
         instituteMatches.length >= 3 &&
@@ -171,7 +171,6 @@ export default function SearchAutocomplete({
       }
     }
 
-    // Interleave top results: Names first, then institutes, HRIS/Post IDs, designations, locations
     const combined = [
       ...nameMatches.slice(0, 4),
       ...instituteMatches.slice(0, 3),
@@ -184,7 +183,12 @@ export default function SearchAutocomplete({
   }, [value, dataset]);
 
   const handleSelect = (item) => {
-    onChange(item.searchValue);
+    onChange(item.searchValue, {
+      exact: true,
+      type: item.type,
+      target: item.searchValue,
+      category: item.category
+    });
     setIsOpen(false);
     setHighlightedIndex(-1);
     inputRef.current?.blur();
@@ -215,18 +219,22 @@ export default function SearchAutocomplete({
     }
   };
 
+  const isExactSelected = Boolean(searchMeta && searchMeta.exact && value === searchMeta.target);
+
   return (
     <div ref={wrapperRef} className={`relative flex-1 ${className}`}>
       {/* Search Input Box */}
       <div className="relative">
-        <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+        <Search className={`w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none transition-colors ${
+          isExactSelected ? 'text-emerald-600' : 'text-slate-400'
+        }`} />
         <input
           ref={inputRef}
           type="text"
           placeholder={placeholder}
           value={value}
           onChange={(e) => {
-            onChange(e.target.value);
+            onChange(e.target.value, null);
             setIsOpen(true);
             setHighlightedIndex(-1);
           }}
@@ -236,25 +244,36 @@ export default function SearchAutocomplete({
             }
           }}
           onKeyDown={handleKeyDown}
-          className="w-full pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all placeholder:text-slate-400"
+          className={`w-full pl-10 pr-24 py-2.5 bg-slate-50 border rounded-xl text-xs sm:text-sm focus:outline-none transition-all placeholder:text-slate-400 ${
+            isExactSelected
+              ? 'border-emerald-500 bg-emerald-50/40 text-emerald-950 ring-2 ring-emerald-500/20 font-semibold'
+              : 'border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:bg-white'
+          }`}
           autoComplete="off"
         />
 
-        {/* Clear Button */}
-        {value && (
-          <button
-            type="button"
-            onClick={() => {
-              onChange('');
-              setIsOpen(false);
-              inputRef.current?.focus();
-            }}
-            className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-200/60 transition-colors"
-            title="Clear search"
-          >
-            <X className="w-3.5 h-3.5" />
-          </button>
-        )}
+        {/* Right Status Badge & Clear Button */}
+        <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
+          {isExactSelected && (
+            <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-emerald-600 text-white shadow-2xs">
+              Exact {searchMeta.category || 'Match'}
+            </span>
+          )}
+          {value && (
+            <button
+              type="button"
+              onClick={() => {
+                onChange('', null);
+                setIsOpen(false);
+                inputRef.current?.focus();
+              }}
+              className="p-1 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-200/60 transition-colors cursor-pointer"
+              title="Clear search"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Autocomplete Dropdown Menu */}

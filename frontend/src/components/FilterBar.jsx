@@ -11,6 +11,7 @@ import {
 
 export default function FilterBar({
   searchTerm,
+  searchMeta = null,
   onSearchChange,
   dataset = [],
   // 1. Designation Groups (Multi-select Dropdown)
@@ -100,6 +101,7 @@ export default function FilterBar({
         {/* Search Autocomplete Box */}
         <SearchAutocomplete
           value={searchTerm}
+          searchMeta={searchMeta}
           onChange={onSearchChange}
           dataset={dataset}
           placeholder="Search by name, institute, designation, post ID, or HRIS ID..."

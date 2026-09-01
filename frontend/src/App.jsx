@@ -77,6 +77,7 @@ export default function App() {
   // Filters & Search State
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [searchMeta, setSearchMeta] = useState(null); // { exact: true, type: 'institute'|'name'|'hris'|'post_id'|'designation'|'location', target: string }
   const [selectedDesignationGroups, setSelectedDesignationGroups] = useState([]);
   const [selectedDisciplines, setSelectedDisciplines] = useState([]);
   const [selectedDesignations, setSelectedDesignations] = useState([]);
@@ -116,20 +117,61 @@ export default function App() {
   const dynamicStatusStats = useMemo(() => {
     let subset = activeDataset;
 
-    // Apply Search
+    // Apply Search (Exact if selected from suggestion, broad if typed words)
     if (debouncedSearch) {
-      const q = debouncedSearch.toLowerCase();
-      subset = subset.filter(s =>
-        (s.name || '').toLowerCase().includes(q) ||
-        (s.current_institute || '').toLowerCase().includes(q) ||
-        (s.hris_id || '').toLowerCase().includes(q) ||
-        (s.post_id || '').includes(q) ||
-        (s.district || '').toLowerCase().includes(q) ||
-        (s.upazila || '').toLowerCase().includes(q) ||
-        (s.designation || '').toLowerCase().includes(q) ||
-        (s.major_discipline || '').toLowerCase().includes(q) ||
-        (s.designation_group || '').toLowerCase().includes(q)
+      const isExact = Boolean(
+        searchMeta &&
+        searchMeta.exact &&
+        debouncedSearch.trim().toLowerCase() === (searchMeta.target || '').trim().toLowerCase()
       );
+
+      if (isExact) {
+        const targetLower = (searchMeta.target || '').trim().toLowerCase();
+        if (searchMeta.type === 'institute') {
+          subset = subset.filter(s =>
+            (s.facility || s.current_institute || '').trim().toLowerCase() === targetLower
+          );
+        } else if (searchMeta.type === 'name') {
+          subset = subset.filter(s =>
+            (s.name || '').trim().toLowerCase() === targetLower
+          );
+        } else if (searchMeta.type === 'hris') {
+          subset = subset.filter(s =>
+            (s.hris_id || '').trim().toLowerCase() === targetLower
+          );
+        } else if (searchMeta.type === 'post_id') {
+          subset = subset.filter(s =>
+            String(s.post_id || '').trim() === String(searchMeta.target).trim()
+          );
+        } else if (searchMeta.type === 'designation') {
+          subset = subset.filter(s =>
+            (s.designation || '').trim().toLowerCase() === targetLower
+          );
+        } else if (searchMeta.type === 'location') {
+          subset = subset.filter(s =>
+            (s.upazila || '').toLowerCase() === targetLower ||
+            (s.district || '').toLowerCase() === targetLower
+          );
+        } else {
+          subset = subset.filter(s =>
+            (s.facility || s.current_institute || '').trim().toLowerCase() === targetLower
+          );
+        }
+      } else {
+        const q = debouncedSearch.toLowerCase();
+        subset = subset.filter(s =>
+          (s.name || '').toLowerCase().includes(q) ||
+          (s.current_institute || '').toLowerCase().includes(q) ||
+          (s.facility || '').toLowerCase().includes(q) ||
+          (s.hris_id || '').toLowerCase().includes(q) ||
+          (s.post_id || '').includes(q) ||
+          (s.district || '').toLowerCase().includes(q) ||
+          (s.upazila || '').toLowerCase().includes(q) ||
+          (s.designation || '').toLowerCase().includes(q) ||
+          (s.major_discipline || '').toLowerCase().includes(q) ||
+          (s.designation_group || '').toLowerCase().includes(q)
+        );
+      }
     }
 
     // Apply Designation Groups
@@ -286,14 +328,30 @@ export default function App() {
     };
   }, [metadata]);
 
+  // Search Change Handler (Supports exact suggestion match or broad typing)
+  const handleSearchChange = (val, meta = null) => {
+    setSearchTerm(val);
+    setSearchMeta(meta);
+    if (meta && meta.exact) {
+      setDebouncedSearch(val);
+    }
+    setCurrentPage(1);
+  };
+
   // Debounce search input
   useEffect(() => {
+    if (searchMeta && searchMeta.exact && searchTerm === searchMeta.target) {
+      return;
+    }
     const timer = setTimeout(() => {
       setDebouncedSearch(searchTerm);
+      if (searchMeta && searchTerm !== searchMeta.target) {
+        setSearchMeta(null);
+      }
       setCurrentPage(1);
     }, 300);
     return () => clearTimeout(timer);
-  }, [searchTerm]);
+  }, [searchTerm, searchMeta]);
 
   const handleGeoChange = ({ division, district, upazila }) => {
     setSelectedDivision(division || '');
@@ -356,6 +414,7 @@ export default function App() {
   const handleResetFilters = () => {
     setSearchTerm('');
     setDebouncedSearch('');
+    setSearchMeta(null);
     setSelectedDesignationGroups([]);
     setSelectedDisciplines([]);
     setSelectedDesignations([]);
@@ -423,20 +482,61 @@ export default function App() {
     const runLocalFilter = (sourceData) => {
       let filtered = [...sourceData];
 
-      // 1. Search Query
+      // 1. Search Query (Exact if selected from suggestion; Broad substring if typed words)
       if (debouncedSearch) {
-        const q = debouncedSearch.toLowerCase();
-        filtered = filtered.filter(s =>
-          (s.name || '').toLowerCase().includes(q) ||
-          (s.current_institute || '').toLowerCase().includes(q) ||
-          (s.hris_id || '').toLowerCase().includes(q) ||
-          (s.post_id || '').includes(q) ||
-          (s.district || '').toLowerCase().includes(q) ||
-          (s.upazila || '').toLowerCase().includes(q) ||
-          (s.designation || '').toLowerCase().includes(q) ||
-          (s.major_discipline || '').toLowerCase().includes(q) ||
-          (s.designation_group || '').toLowerCase().includes(q)
+        const isExact = Boolean(
+          searchMeta &&
+          searchMeta.exact &&
+          debouncedSearch.trim().toLowerCase() === (searchMeta.target || '').trim().toLowerCase()
         );
+
+        if (isExact) {
+          const targetLower = (searchMeta.target || '').trim().toLowerCase();
+          if (searchMeta.type === 'institute') {
+            filtered = filtered.filter(s =>
+              (s.facility || s.current_institute || '').trim().toLowerCase() === targetLower
+            );
+          } else if (searchMeta.type === 'name') {
+            filtered = filtered.filter(s =>
+              (s.name || '').trim().toLowerCase() === targetLower
+            );
+          } else if (searchMeta.type === 'hris') {
+            filtered = filtered.filter(s =>
+              (s.hris_id || '').trim().toLowerCase() === targetLower
+            );
+          } else if (searchMeta.type === 'post_id') {
+            filtered = filtered.filter(s =>
+              String(s.post_id || '').trim() === String(searchMeta.target).trim()
+            );
+          } else if (searchMeta.type === 'designation') {
+            filtered = filtered.filter(s =>
+              (s.designation || '').trim().toLowerCase() === targetLower
+            );
+          } else if (searchMeta.type === 'location') {
+            filtered = filtered.filter(s =>
+              (s.upazila || '').toLowerCase() === targetLower ||
+              (s.district || '').toLowerCase() === targetLower
+            );
+          } else {
+            filtered = filtered.filter(s =>
+              (s.facility || s.current_institute || '').trim().toLowerCase() === targetLower
+            );
+          }
+        } else {
+          const q = debouncedSearch.toLowerCase();
+          filtered = filtered.filter(s =>
+            (s.name || '').toLowerCase().includes(q) ||
+            (s.current_institute || '').toLowerCase().includes(q) ||
+            (s.facility || '').toLowerCase().includes(q) ||
+            (s.hris_id || '').toLowerCase().includes(q) ||
+            (s.post_id || '').includes(q) ||
+            (s.district || '').toLowerCase().includes(q) ||
+            (s.upazila || '').toLowerCase().includes(q) ||
+            (s.designation || '').toLowerCase().includes(q) ||
+            (s.major_discipline || '').toLowerCase().includes(q) ||
+            (s.designation_group || '').toLowerCase().includes(q)
+          );
+        }
       }
 
       // 2. Designation Groups Filter (Multi-select)
@@ -887,7 +987,8 @@ export default function App() {
         {/* Filters */}
         <FilterBar
           searchTerm={searchTerm}
-          onSearchChange={setSearchTerm}
+          searchMeta={searchMeta}
+          onSearchChange={handleSearchChange}
           dataset={activeDataset}
           selectedDesignationGroups={selectedDesignationGroups}
           onDesignationGroupsChange={handleDesignationGroupsChange}
