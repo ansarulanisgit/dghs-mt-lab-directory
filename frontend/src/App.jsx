@@ -540,7 +540,7 @@ export default function App() {
 
     try {
       let query = supabase
-        .from('mt_lab_staff')
+        .from('staff_records')
         .select('*', { count: 'exact' });
 
       if (debouncedSearch) {
@@ -571,7 +571,7 @@ export default function App() {
 
       // Fetch all matching records for full PDF export
       let allQuery = supabase
-        .from('mt_lab_staff')
+        .from('staff_records')
         .select('*');
       if (debouncedSearch) allQuery = allQuery.or(`name.ilike.%${debouncedSearch}%,current_institute.ilike.%${debouncedSearch}%,hris_id.ilike.%${debouncedSearch}%,post_id.ilike.%${debouncedSearch}%`);
       if (selectedStatus) allQuery = allQuery.ilike('status', selectedStatus);
