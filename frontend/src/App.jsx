@@ -533,70 +533,9 @@ export default function App() {
       setIsLoading(false);
     };
 
-    if (!isSupabaseConfigured || activeRestoredBackup) {
-      runLocalFilter(activeDataset);
-      return;
-    }
-
-    try {
-      let query = supabase
-        .from('staff_records')
-        .select('*', { count: 'exact' });
-
-      if (debouncedSearch) {
-        query = query.or(`name.ilike.%${debouncedSearch}%,current_institute.ilike.%${debouncedSearch}%,hris_id.ilike.%${debouncedSearch}%,post_id.ilike.%${debouncedSearch}%`);
-      }
-      if (selectedStatus) query = query.ilike('status', selectedStatus);
-      if (selectedDivision) query = query.ilike('division', selectedDivision);
-      if (selectedDistrict) query = query.ilike('district', selectedDistrict);
-      if (selectedUpazila) query = query.ilike('upazila', selectedUpazila);
-      if (selectedGender) query = query.ilike('gender', selectedGender);
-      if (hidePastPRL) {
-        const todayStr = new Date().toISOString().split('T')[0];
-        query = query.gte('prl_date', todayStr);
-      }
-
-      const isAsc = sortOrder === 'asc';
-      query = query.order(sortBy, { ascending: isAsc, nullsFirst: false });
-
-      const from = (currentPage - 1) * PAGE_SIZE;
-      const to = from + PAGE_SIZE - 1;
-      query = query.range(from, to);
-
-      const { data, count, error: queryError } = await query;
-      if (queryError) throw queryError;
-
-      setStaffList(data || []);
-      setTotalCount(count || 0);
-
-      // Fetch all matching records for full PDF export
-      let allQuery = supabase
-        .from('staff_records')
-        .select('*');
-      if (debouncedSearch) allQuery = allQuery.or(`name.ilike.%${debouncedSearch}%,current_institute.ilike.%${debouncedSearch}%,hris_id.ilike.%${debouncedSearch}%,post_id.ilike.%${debouncedSearch}%`);
-      if (selectedStatus) allQuery = allQuery.ilike('status', selectedStatus);
-      if (selectedDivision) allQuery = allQuery.ilike('division', selectedDivision);
-      if (selectedDistrict) allQuery = allQuery.ilike('district', selectedDistrict);
-      if (selectedUpazila) allQuery = allQuery.ilike('upazila', selectedUpazila);
-      if (selectedGender) allQuery = allQuery.ilike('gender', selectedGender);
-      if (hidePastPRL) {
-        const todayStr = new Date().toISOString().split('T')[0];
-        allQuery = allQuery.gte('prl_date', todayStr);
-      }
-      allQuery = allQuery.order(sortBy, { ascending: isAsc, nullsFirst: false });
-      const { data: allData } = await allQuery;
-      setAllFilteredStaff(allData || data || []);
-      setSyncErrorNotice(null);
-    } catch (err) {
-      console.error('Error fetching staff from cloud:', err);
-      setSyncErrorNotice('Update/Sync issue encountered: Unable to reach portal database. Keeping most recent cached dataset intact.');
-      runLocalFilter(activeDataset);
-    } finally {
-      setIsLoading(false);
-    }
+    runLocalFilter(activeDataset);
   }, [
     activeDataset,
-    activeRestoredBackup,
     debouncedSearch,
     selectedDesignationGroups,
     selectedDisciplines,
