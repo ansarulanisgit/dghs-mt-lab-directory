@@ -31,8 +31,8 @@ export default function PermissionDeniedModal({ isOpen, onClose }) {
             <div className="absolute -inset-1 rounded-full bg-yellow-300/30 blur-md" />
 
             {/* Light Yellow Circular Badge */}
-            <div className="relative w-22 h-22 sm:w-24 sm:h-24 rounded-full bg-gradient-to-b from-amber-50 via-yellow-50 to-amber-100/90 border-2 border-amber-200/90 shadow-lg shadow-amber-500/25 flex items-center justify-center text-amber-600">
-              <Lock className="w-10 h-10 sm:w-11 sm:h-11 text-amber-600 stroke-[2.3] drop-shadow-xs" />
+            <div className="relative w-22 h-22 sm:w-24 sm:h-24 rounded-full bg-gradient-to-b from-amber-50 via-yellow-50 to-amber-100/90 border-2 border-amber-200/90 shadow-lg shadow-amber-500/25 flex items-center justify-center text-rose-600">
+              <Lock className="w-10 h-10 sm:w-11 sm:h-11 text-rose-600 stroke-[2.3] drop-shadow-xs" />
             </div>
           </div>
         </div>
