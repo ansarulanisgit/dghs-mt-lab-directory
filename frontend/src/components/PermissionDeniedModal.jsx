@@ -29,8 +29,8 @@ export default function PermissionDeniedModal({ isOpen, onClose }) {
             {/* Animated Yellow Glow Halo */}
             <div className="absolute -inset-2.5 rounded-full bg-gradient-to-tr from-yellow-400/50 via-amber-400/60 to-yellow-300/60 animate-yellow-glow pointer-events-none" />
 
-            {/* Yellow Circular Badge with Yellow Border */}
-            <div className="relative w-[72px] h-[72px] sm:w-[84px] sm:h-[84px] rounded-full bg-gradient-to-b from-yellow-100 via-amber-100 to-yellow-200 border-2.5 border-yellow-400 shadow-md shadow-yellow-500/25 flex items-center justify-center text-rose-600">
+            {/* White Circular Badge with Yellow Border & Animated Yellow Glow */}
+            <div className="relative w-[72px] h-[72px] sm:w-[84px] sm:h-[84px] rounded-full bg-white border-2.5 border-yellow-400 shadow-md shadow-yellow-500/20 flex items-center justify-center text-rose-600">
               <Lock className="w-[30px] h-[30px] sm:w-[36px] sm:h-[36px] text-rose-600 stroke-[2.3] drop-shadow-xs" />
             </div>
           </div>
