@@ -6,52 +6,50 @@ export default function PermissionDeniedModal({ isOpen, onClose }) {
 
   return (
     <div 
-      className="fixed inset-0 z-70 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm animate-in fade-in duration-200"
+      className="fixed inset-0 z-70 flex items-center justify-center p-4 sm:p-6 bg-slate-950/70 backdrop-blur-sm animate-in fade-in duration-200"
       onClick={onClose}
     >
       <div 
-        className="relative bg-white rounded-3xl shadow-2xl max-w-sm w-full p-6 sm:p-7 text-center border border-slate-200/90 animate-in zoom-in-95 duration-200 space-y-4.5"
+        className="relative bg-white rounded-3xl shadow-2xl max-w-md w-full p-7 sm:p-9 text-center border border-slate-200/90 animate-in zoom-in-95 duration-200 space-y-6"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Top Close Button */}
         <button
           type="button"
           onClick={onClose}
-          className="absolute right-4 top-4 p-1.5 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+          className="absolute right-5 top-5 p-2 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
           title="Close"
         >
-          <X className="w-4 h-4" />
+          <X className="w-4 h-4 sm:w-5 sm:h-5" />
         </button>
 
-        {/* Circular Static User Lock Icon */}
-        <div className="pt-2">
-          <div className="w-20 h-20 rounded-full bg-rose-50 border-2 border-rose-200/90 shadow-sm flex items-center justify-center mx-auto relative">
-            <User className="w-10 h-10 text-rose-600 stroke-[2.2]" />
+        {/* Circular Static User Lock Icon with Generous Spacing */}
+        <div className="pt-3 pb-1">
+          <div className="w-22 h-22 sm:w-24 sm:h-24 rounded-full bg-rose-50 border-2 border-rose-200/90 shadow-sm flex items-center justify-center mx-auto relative">
+            <User className="w-11 h-11 sm:w-12 sm:h-12 text-rose-600 stroke-[2.2]" />
             {/* Corner Lock Badge */}
-            <div className="absolute bottom-0 right-0 w-6.5 h-6.5 rounded-full bg-rose-600 border-2 border-white text-white flex items-center justify-center shadow-xs">
-              <Lock className="w-3.5 h-3.5 stroke-[2.5]" />
+            <div className="absolute bottom-0.5 right-0.5 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-rose-600 border-2 border-white text-white flex items-center justify-center shadow-xs">
+              <Lock className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2.5]" />
             </div>
           </div>
         </div>
 
-        {/* Red Title */}
-        <h3 className="text-xl sm:text-2xl font-black text-rose-600 tracking-tight">
-          Access Restricted
-        </h3>
-
-        {/* Subtitle Text (Bigger, black text without background) */}
-        <div className="px-1">
-          <p className="text-sm sm:text-base text-slate-900 font-semibold leading-relaxed">
+        {/* Heading & Subtitle Block with Comfortable Spacing */}
+        <div className="space-y-3 px-2">
+          <h3 className="text-2xl sm:text-3xl font-black text-rose-600 tracking-tight leading-snug">
+            Access Restricted
+          </h3>
+          <p className="text-sm sm:text-base text-slate-900 font-semibold leading-relaxed max-w-xs mx-auto">
             You don't have permission to access this feature.
           </p>
         </div>
 
-        {/* Action Button */}
-        <div className="pt-2">
+        {/* Action Button with Top Padding */}
+        <div className="pt-3 sm:pt-4">
           <button
             type="button"
             onClick={onClose}
-            className="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs sm:text-sm rounded-xl shadow-md transition-all cursor-pointer"
+            className="w-full py-3.5 px-6 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-sm sm:text-base rounded-2xl shadow-md hover:shadow-lg transition-all cursor-pointer transform active:scale-[0.98]"
           >
             Understood
           </button>
