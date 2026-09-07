@@ -47,12 +47,15 @@ export default function PermissionDeniedModal({ isOpen, onClose }) {
           </p>
         </div>
 
-        {/* Action Button */}
-        <div className="pt-2">
+        {/* Action Button with Theme Green Border and Visible Glow Effect */}
+        <div className="pt-2 relative">
+          {/* Vibrant Emerald Ambient Glow Halo */}
+          <div className="absolute -inset-1 rounded-2xl bg-emerald-500/40 blur-md animate-pulse" />
+
           <button
             type="button"
             onClick={onClose}
-            className="w-full py-3 sm:py-3.5 px-6 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold text-xs sm:text-sm rounded-2xl shadow-md shadow-emerald-600/25 hover:shadow-lg transition-all cursor-pointer transform active:scale-[0.98]"
+            className="relative w-full py-3 sm:py-3.5 px-6 bg-gradient-to-r from-emerald-600 via-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold text-xs sm:text-sm rounded-2xl border-2 border-emerald-300 shadow-[0_0_22px_rgba(16,185,129,0.55)] hover:shadow-[0_0_30px_rgba(16,185,129,0.8)] transition-all cursor-pointer transform active:scale-[0.98]"
           >
             Understood
           </button>
