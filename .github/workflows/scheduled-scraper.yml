@@ -2,14 +2,20 @@ name: Automated DGHS Directory Synchronization
 
 on:
   schedule:
-    # Runs weekly on Sundays at 00:00 UTC (06:00 AM BST)
-    - cron: '0 0 * * 0'
+    # Runs daily at 00:00 UTC (06:00 AM BST) to dynamically check and execute when scheduleIntervalDays is reached
+    - cron: '0 0 * * *'
   workflow_dispatch:
+    inputs:
+      force:
+        description: 'Force immediate synchronization (bypasses schedule interval check)'
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   scrape-and-sync:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 35
 
     steps:
       - name: Checkout repository
@@ -36,11 +42,16 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: |
-          node index.js
+          if [ "${{ github.event.inputs.force }}" = "true" ]; then
+            node index.js --force
+          else
+            node index.js
+          fi
 
-      - name: Commit & Push Updated Dataset
+      - name: Commit & Push Updated Dataset & Backups
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add scraper/scraped_records.json frontend/src/lib/scraped_records.json scraper/sync_metadata.json frontend/src/lib/sync_metadata.json
+          git add scraper/scraped_records*.json frontend/src/lib/scraped_records*.json scraper/sync_metadata.json frontend/src/lib/sync_metadata.json
           git diff --quiet && git diff --staged --quiet || (git commit -m "chore(data): auto-update DGHS employee directory dataset [skip ci]" && git push)
+

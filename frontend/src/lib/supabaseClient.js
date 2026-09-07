@@ -2,8 +2,11 @@ import { createClient } from '@supabase/supabase-js';
 import scrapedData from './scraped_records.json';
 import syncMetadata from './sync_metadata.json';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const DEFAULT_SUPABASE_URL = 'https://xiwrfifchvfrjdwyolif.supabase.co';
+const DEFAULT_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhpd3JmaWZjaHZmcmpkd3lvbGlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgyNjQzNDUsImV4cCI6MjEwMzg0MDM0NX0.mBSI2P32tlL4CQfm2MZ0Gqy8nXAVoCZqZsPvDJWjFdY';
+
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || DEFAULT_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || DEFAULT_SUPABASE_ANON_KEY;
 
 export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey);
 

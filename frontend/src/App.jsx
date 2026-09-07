@@ -744,21 +744,31 @@ export default function App() {
 
       // 2. Perform sync timestamp update
       const newTimestamp = new Date().toISOString();
-      setMetadata(prev => ({
-        ...prev,
-        last_run_at: newTimestamp
-      }));
+      const currentConfig = getSystemConfig();
+      const filled = activeDataset.filter(s => s.status === 'Filled').length;
+      const vacant = activeDataset.filter(s => s.status === 'Vacant').length;
+      const abolished = activeDataset.filter(s => s.status === 'Abolished').length;
+
+      const newMeta = {
+        id: 1,
+        last_run_at: newTimestamp,
+        record_count: activeDataset.length,
+        filled_count: filled,
+        vacant_count: vacant,
+        abolished_count: abolished,
+        failed_count: 0,
+        schedule_interval_days: currentConfig.scheduleIntervalDays || 7,
+        status: 'idle',
+        updated_at: newTimestamp
+      };
+
+      setMetadata(newMeta);
 
       // 3. If Supabase configured, update central cloud metadata
       if (isSupabaseConfigured && supabase) {
         await supabase
           .from('scrape_metadata')
-          .upsert({
-            id: 1,
-            last_run_at: newTimestamp,
-            record_count: activeDataset.length,
-            failed_count: 0
-          }, { onConflict: 'id' });
+          .upsert(newMeta, { onConflict: 'id' });
       }
 
       // 4. Refresh directory

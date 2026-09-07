@@ -3,7 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { login } from './login.js';
-import { upsertStaffRecords, updateScrapeMetadata } from './upsertToSupabase.js';
+import { upsertStaffRecords, updateScrapeMetadata, checkIfUpdateDue, createPreUpdateBackup } from './upsertToSupabase.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -52,6 +52,20 @@ export async function runScraper(options = {}) {
   console.log('       DGHS Central Employee Directory Scraper & Synchronization Engine        ');
   console.log('            (High-Speed 10,027 Posts Live Automated Harvester)                 ');
   console.log('================================================================================');
+
+  // 0. Verify if update is due according to the configured schedule interval (or forced)
+  const scheduleStatus = await checkIfUpdateDue(options);
+  if (!scheduleStatus.isDue) {
+    console.log(`\n[Schedule Status] Auto-update skipped: ${scheduleStatus.reason}`);
+    console.log(`[Schedule Status] Next automated execution in ~${scheduleStatus.daysRemaining} days.`);
+    return {
+      skipped: true,
+      reason: scheduleStatus.reason,
+      intervalDays: scheduleStatus.intervalDays,
+      daysRemaining: scheduleStatus.daysRemaining
+    };
+  }
+  console.log(`\n[Schedule Status] Proceeding with synchronization: ${scheduleStatus.reason}`);
 
   // 1. Authenticate & Obtain Storage State
   console.log('\n[Step 1/4] Authenticating with DGHS HRM Portal...');
@@ -264,7 +278,7 @@ export async function runScraper(options = {}) {
       filled_count: finalRecords.filter(r => r.status === 'Filled').length,
       vacant_count: finalRecords.filter(r => r.status === 'Vacant').length,
       abolished_count: finalRecords.filter(r => r.status === 'Abolished').length,
-      schedule_interval_days: 7
+      schedule_interval_days: scheduleStatus.intervalDays || 7
     };
 
     if (finalRecords.length > 0) {
@@ -286,11 +300,24 @@ export async function runScraper(options = {}) {
       fs.writeFileSync(frontendSyncMetaPath, JSON.stringify(metadataObj, null, 2), 'utf8');
     }
 
-    // Step 4: Upsert to Supabase if configured
-    console.log('\n[Step 4/4] Upserting to Supabase (if configured)...');
+    // Step 4: Upsert to Supabase with automated pre-update cloud snapshot & real-time broadcast
+    console.log('\n[Step 4/4] Synchronizing with Supabase Realtime Cloud Database...');
     try {
+      // 1. Take automated backup snapshot of existing data before overwriting
+      await createPreUpdateBackup();
+
+      // 2. Upsert / replace staff_records
       await upsertStaffRecords(finalRecords);
-      await updateScrapeMetadata(finalRecords.length, 0);
+
+      // 3. Update scrape_metadata with full counts and interval to trigger real-time client updates
+      await updateScrapeMetadata(
+        finalRecords.length,
+        metadataObj.filled_count,
+        metadataObj.vacant_count,
+        metadataObj.abolished_count,
+        0,
+        metadataObj.schedule_interval_days
+      );
     } catch (dbErr) {
       console.log(`[Supabase Notice]: ${dbErr.message}`);
     }
