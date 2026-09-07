@@ -23,15 +23,20 @@ export default function PermissionDeniedModal({ isOpen, onClose }) {
           <X className="w-4 h-4 sm:w-5 sm:h-5" />
         </button>
 
-        {/* Circular Light Yellow Lock Icon with Theme Green Border & Visible Green Glowing Effect */}
+        {/* Circular Light Yellow Lock Icon with Theme Green Border & Radiant Animated Green Glow */}
         <div className="pt-2 flex justify-center items-center">
           <div className="relative w-20 h-20 sm:w-24 sm:h-24 flex items-center justify-center">
-            {/* Highly Visible Theme Green Glowing Halo */}
-            <div className="absolute -inset-3 rounded-full bg-emerald-500/45 blur-xl animate-pulse" />
-            <div className="absolute -inset-1.5 rounded-full bg-emerald-400/55 blur-md" />
+            {/* Animated Expanding Ripple Ping */}
+            <div className="absolute -inset-2 rounded-full bg-emerald-400/40 animate-ring-ping pointer-events-none" />
+
+            {/* Radiant Breathing Animated Green Glow Halo */}
+            <div className="absolute -inset-4 rounded-full bg-gradient-to-tr from-emerald-500/60 via-teal-400/70 to-emerald-400/60 animate-radiant-glow pointer-events-none" />
+
+            {/* Core Radiant Bloom Ring */}
+            <div className="absolute -inset-1 rounded-full bg-emerald-400/60 blur-sm pointer-events-none" />
 
             {/* Light Yellow Circular Badge with Theme Green Border */}
-            <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gradient-to-b from-amber-50 via-yellow-50 to-amber-100 border-2.5 border-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.45)] flex items-center justify-center text-rose-600">
+            <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gradient-to-b from-amber-50 via-yellow-50 to-amber-100 border-2.5 border-emerald-500 shadow-[0_0_24px_rgba(16,185,129,0.55)] flex items-center justify-center text-rose-600">
               <Lock className="w-9 h-9 sm:w-11 sm:h-11 text-rose-600 stroke-[2.4] drop-shadow-xs" />
             </div>
           </div>
