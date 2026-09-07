@@ -23,21 +23,15 @@ export default function PermissionDeniedModal({ isOpen, onClose }) {
           <X className="w-4 h-4 sm:w-5 sm:h-5" />
         </button>
 
-        {/* Circular Light Yellow Lock Icon with Theme Green Border & Radiant Animated Green Glow */}
+        {/* Circular Light Yellow Lock Icon with Theme Green Border & Light Animated Green Glow */}
         <div className="pt-2 flex justify-center items-center">
           <div className="relative w-20 h-20 sm:w-24 sm:h-24 flex items-center justify-center">
-            {/* Animated Expanding Ripple Ping */}
-            <div className="absolute -inset-2 rounded-full bg-emerald-400/40 animate-ring-ping pointer-events-none" />
-
-            {/* Radiant Breathing Animated Green Glow Halo */}
-            <div className="absolute -inset-4 rounded-full bg-gradient-to-tr from-emerald-500/60 via-teal-400/70 to-emerald-400/60 animate-radiant-glow pointer-events-none" />
-
-            {/* Core Radiant Bloom Ring */}
-            <div className="absolute -inset-1 rounded-full bg-emerald-400/60 blur-sm pointer-events-none" />
+            {/* Soft Subtle Animated Green Glow Halo */}
+            <div className="absolute -inset-2.5 rounded-full bg-emerald-400/30 animate-soft-glow pointer-events-none" />
 
             {/* Light Yellow Circular Badge with Theme Green Border */}
-            <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gradient-to-b from-amber-50 via-yellow-50 to-amber-100 border-2.5 border-emerald-500 shadow-[0_0_24px_rgba(16,185,129,0.55)] flex items-center justify-center text-rose-600">
-              <Lock className="w-9 h-9 sm:w-11 sm:h-11 text-rose-600 stroke-[2.4] drop-shadow-xs" />
+            <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gradient-to-b from-amber-50 via-yellow-50 to-amber-100/90 border-2 border-emerald-400/90 shadow-md shadow-emerald-500/15 flex items-center justify-center text-rose-600">
+              <Lock className="w-9 h-9 sm:w-11 sm:h-11 text-rose-600 stroke-[2.3] drop-shadow-xs" />
             </div>
           </div>
         </div>
