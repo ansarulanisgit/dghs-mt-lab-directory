@@ -157,18 +157,14 @@ export default function StaffDetailModal({ staff, onClose, canViewPhone = true, 
                   <span className="text-slate-500 text-xs block">Date of Birth (DOB):</span>
                   <span className="font-semibold text-slate-800">{formatFullDate(staff.dob)}</span>
                 </div>
-                <div>
-                  <span className="text-slate-500 text-xs block">PRL Date (DOB + 59y):</span>
-                  {canViewPrl ? (
+                {canViewPrl && staff.prl_date && (
+                  <div>
+                    <span className="text-slate-500 text-xs block">PRL Date (DOB + 59y):</span>
                     <span className="font-extrabold text-rose-950 text-sm bg-rose-50 px-2.5 py-0.5 rounded-lg border border-rose-200 inline-block mt-0.5">
                       {formatFullDate(staff.prl_date)}
                     </span>
-                  ) : (
-                    <span className="font-semibold text-slate-400 text-xs bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200 inline-flex items-center gap-1 mt-0.5" title="PRL date restricted">
-                      <span>Restricted</span>
-                    </span>
-                  )}
-                </div>
+                  </div>
+                )}
                 {staff.national_id && (
                   <div>
                     <span className="text-slate-500 text-xs block">National ID (NID):</span>

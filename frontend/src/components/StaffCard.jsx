@@ -134,23 +134,21 @@ function StaffCard({ staff, onSelect, canViewPhone = true, canViewPrl = true, ca
       </div>
 
       {/* Card Footer: PRL Date on Left, Light View Details Button on Right in Same Row */}
-      <div className="p-3.5 sm:p-4 border-t border-slate-100 bg-slate-50/50 flex items-center justify-between gap-2">
-        {/* Left: Prominent PRL Date (13px font, Light Red Shade Badge) */}
-        {isFilled && staff.prl_date ? (
-          canViewPrl ? (
+      <div className={`p-3.5 sm:p-4 border-t border-slate-100 bg-slate-50/50 flex items-center gap-2 ${
+        canViewPrl ? 'justify-between' : 'justify-end'
+      }`}>
+        {/* Left: Prominent PRL Date (Completely hidden if user doesn't have permission for PRL) */}
+        {canViewPrl && (
+          isFilled && staff.prl_date ? (
             <div className="inline-flex items-center gap-1.5 text-rose-950 font-extrabold text-[13px] bg-rose-50/90 px-2.5 py-1 rounded-xl border border-rose-200/90 shadow-2xs">
               <Calendar className="w-3.5 h-3.5 text-rose-600 shrink-0" />
               <span>PRL: {formatPRL(staff.prl_date)}</span>
             </div>
           ) : (
-            <div className="inline-flex items-center gap-1.5 text-slate-500 font-semibold text-xs bg-slate-100 px-2.5 py-1 rounded-xl border border-slate-200" title="PRL date restricted">
-              <span>PRL: Restricted</span>
-            </div>
+            <span className="text-xs font-semibold text-slate-400 italic">
+              {isAbolished ? 'Post Abolished' : isVacant ? 'Position Vacant' : 'No PRL'}
+            </span>
           )
-        ) : (
-          <span className="text-xs font-semibold text-slate-400 italic">
-            {isAbolished ? 'Post Abolished' : isVacant ? 'Position Vacant' : 'No PRL'}
-          </span>
         )}
 
         {/* Right: Light View Details Button with bg color */}
