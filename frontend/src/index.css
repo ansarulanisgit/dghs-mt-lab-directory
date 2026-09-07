@@ -31,20 +31,20 @@
   background: #94a3b8;
 }
 
-/* Soft Subtle Animated Green Glow Halo */
-@keyframes softGlowPulse {
+/* Soft Subtle Animated Light Yellow Glow Halo */
+@keyframes softYellowGlowPulse {
   0%, 100% {
     transform: scale(0.98);
-    opacity: 0.25;
+    opacity: 0.35;
     filter: blur(12px);
   }
   50% {
     transform: scale(1.08);
-    opacity: 0.45;
-    filter: blur(18px);
+    opacity: 0.6;
+    filter: blur(16px);
   }
 }
 
-.animate-soft-glow {
-  animation: softGlowPulse 3s ease-in-out infinite;
+.animate-soft-yellow-glow {
+  animation: softYellowGlowPulse 2.8s ease-in-out infinite;
 }
