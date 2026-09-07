@@ -23,15 +23,15 @@ export default function PermissionDeniedModal({ isOpen, onClose }) {
           <X className="w-4 h-4 sm:w-5 sm:h-5" />
         </button>
 
-        {/* Circular Light Yellow Lock Icon with Glowing Effect */}
+        {/* Circular Light Yellow Lock Icon with Theme Green Border & Visible Green Glowing Effect */}
         <div className="pt-2 flex justify-center items-center">
           <div className="relative w-20 h-20 sm:w-24 sm:h-24 flex items-center justify-center">
-            {/* Soft Glowing Ambient Halo (Bounded strictly to the circle) */}
-            <div className="absolute -inset-2.5 rounded-full bg-amber-400/30 blur-lg animate-pulse" />
-            <div className="absolute -inset-1 rounded-full bg-yellow-300/40 blur-sm" />
+            {/* Highly Visible Theme Green Glowing Halo */}
+            <div className="absolute -inset-3 rounded-full bg-emerald-500/45 blur-xl animate-pulse" />
+            <div className="absolute -inset-1.5 rounded-full bg-emerald-400/55 blur-md" />
 
-            {/* Light Yellow Circular Badge */}
-            <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gradient-to-b from-amber-50 via-yellow-50 to-amber-100 border-2 border-amber-200/90 shadow-md shadow-amber-500/20 flex items-center justify-center text-rose-600">
+            {/* Light Yellow Circular Badge with Theme Green Border */}
+            <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gradient-to-b from-amber-50 via-yellow-50 to-amber-100 border-2.5 border-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.45)] flex items-center justify-center text-rose-600">
               <Lock className="w-9 h-9 sm:w-11 sm:h-11 text-rose-600 stroke-[2.4] drop-shadow-xs" />
             </div>
           </div>
@@ -47,15 +47,12 @@ export default function PermissionDeniedModal({ isOpen, onClose }) {
           </p>
         </div>
 
-        {/* Action Button with Theme Green Border and Visible Glow Effect */}
-        <div className="pt-2 relative">
-          {/* Vibrant Emerald Ambient Glow Halo */}
-          <div className="absolute -inset-1 rounded-2xl bg-emerald-500/40 blur-md animate-pulse" />
-
+        {/* Action Button */}
+        <div className="pt-2">
           <button
             type="button"
             onClick={onClose}
-            className="relative w-full py-3 sm:py-3.5 px-6 bg-gradient-to-r from-emerald-600 via-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold text-xs sm:text-sm rounded-2xl border-2 border-emerald-300 shadow-[0_0_22px_rgba(16,185,129,0.55)] hover:shadow-[0_0_30px_rgba(16,185,129,0.8)] transition-all cursor-pointer transform active:scale-[0.98]"
+            className="w-full py-3 sm:py-3.5 px-6 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold text-xs sm:text-sm rounded-2xl shadow-md shadow-emerald-600/20 hover:shadow-lg transition-all cursor-pointer transform active:scale-[0.98]"
           >
             Understood
           </button>
