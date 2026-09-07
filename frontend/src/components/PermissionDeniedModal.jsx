@@ -23,13 +23,16 @@ export default function PermissionDeniedModal({ isOpen, onClose }) {
           <X className="w-4 h-4 sm:w-5 sm:h-5" />
         </button>
 
-        {/* Circular Static User Lock Icon with Generous Spacing */}
+        {/* Circular Light Yellow Lock Icon with Glowing Effect */}
         <div className="pt-3 pb-1">
-          <div className="w-22 h-22 sm:w-24 sm:h-24 rounded-full bg-rose-50 border-2 border-rose-200/90 shadow-sm flex items-center justify-center mx-auto relative">
-            <User className="w-11 h-11 sm:w-12 sm:h-12 text-rose-600 stroke-[2.2]" />
-            {/* Corner Lock Badge */}
-            <div className="absolute bottom-0.5 right-0.5 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-rose-600 border-2 border-white text-white flex items-center justify-center shadow-xs">
-              <Lock className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2.5]" />
+          <div className="relative w-22 h-22 sm:w-24 sm:h-24 mx-auto flex items-center justify-center">
+            {/* Soft Glowing Ambient Halo */}
+            <div className="absolute inset-0 rounded-full bg-amber-400/35 blur-lg animate-pulse" />
+            <div className="absolute -inset-1 rounded-full bg-yellow-300/30 blur-md" />
+
+            {/* Light Yellow Circular Badge */}
+            <div className="relative w-22 h-22 sm:w-24 sm:h-24 rounded-full bg-gradient-to-b from-amber-50 via-yellow-50 to-amber-100/90 border-2 border-amber-200/90 shadow-lg shadow-amber-500/25 flex items-center justify-center text-amber-600">
+              <Lock className="w-10 h-10 sm:w-11 sm:h-11 text-amber-600 stroke-[2.3] drop-shadow-xs" />
             </div>
           </div>
         </div>
