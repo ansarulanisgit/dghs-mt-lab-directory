@@ -248,7 +248,7 @@ export function saveBackupSnapshot(dataset, label = 'Automatic Update Backup', i
   }
 }
 
-export function deleteBackupById(backupId) {
+export async function deleteBackupById(backupId) {
   try {
     const backups = getBackups();
     const target = backups.find(b => b.id === backupId);
@@ -260,7 +260,7 @@ export function deleteBackupById(backupId) {
     localStorage.setItem(BACKUP_META_STORAGE_KEY, JSON.stringify(updated));
 
     // Delete from IndexedDB
-    deleteDatasetFromIDB(backupId);
+    await deleteDatasetFromIDB(backupId);
 
     // If active restored view was this deleted backup, clear override
     const activeOverride = getActiveBackupOverride();
@@ -272,11 +272,17 @@ export function deleteBackupById(backupId) {
 
     // Delete from Cloud Supabase
     if (isSupabaseConfigured && supabase) {
-      supabase
-        .from('staff_backups')
-        .delete()
-        .eq('id', backupId)
-        .catch((err) => console.warn('Cloud backup delete exception:', err));
+      try {
+        const { error } = await supabase
+          .from('staff_backups')
+          .delete()
+          .eq('id', backupId);
+        if (error) {
+          console.warn('Cloud backup delete warning:', error.message);
+        }
+      } catch (cloudErr) {
+        console.warn('Cloud backup delete exception:', cloudErr);
+      }
     }
 
     return true;

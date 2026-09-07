@@ -248,10 +248,10 @@ export default function SettingsModal({ currentUser, onClose, onForceUpdate, dyn
     }
   };
 
-  const handleDeleteBackup = (backupId) => {
+  const handleDeleteBackup = async (backupId) => {
     if (window.confirm('Are you sure you want to permanently delete this backup version?')) {
       try {
-        deleteBackupById(backupId);
+        await deleteBackupById(backupId);
         const updated = getBackups();
         setBackupsList(updated);
         setActiveBackupOverride(getActiveBackupOverride());
