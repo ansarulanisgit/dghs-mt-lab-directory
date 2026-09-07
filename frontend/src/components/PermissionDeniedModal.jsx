@@ -39,9 +39,9 @@ export default function PermissionDeniedModal({ isOpen, onClose }) {
           Access Restricted
         </h3>
 
-        {/* Subtitle Text Pill (No icon) */}
-        <div>
-          <p className="text-xs sm:text-sm text-rose-700 font-semibold bg-rose-50/90 px-4 py-2 rounded-xl border border-rose-200/80 inline-block leading-relaxed">
+        {/* Subtitle Text (Bigger, black text without background) */}
+        <div className="px-1">
+          <p className="text-sm sm:text-base text-slate-900 font-semibold leading-relaxed">
             You don't have permission to access this feature.
           </p>
         </div>
