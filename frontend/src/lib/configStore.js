@@ -17,6 +17,9 @@ export const DEFAULT_CONFIG = {
   appTitle: 'DGHS Employee Directory',
   appSubtitle: 'Central Directory of Medical Technologists and Pharmacists',
   footerText: 'DGHS Employee Directory - Developed By Ansarul Anis',
+  loginTitle: 'DGHS Employee Directory',
+  loginSubtitle: 'Sign In to See the Directory',
+  loginFooterText: 'Developed by Ansarul Anis',
   designatedSearchQuery: 'Medical Technologist',
   adminEmail: 'ansarul.contact@gmail.com',
   adminPassword: 'Ansarul@233'

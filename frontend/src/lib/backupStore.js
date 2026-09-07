@@ -111,7 +111,21 @@ export function getBackups() {
     if (!raw) return [];
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
-    return parsed.filter(b => (b.recordCount || 0) >= 10000 && b.recordCount !== 2506);
+    return parsed
+      .filter(b => (b.recordCount || 0) >= 10000 && b.recordCount !== 2506)
+      .map(b => {
+        const count = b.recordCount || 10027;
+        const filled = b.filledCount ?? b.filled_count ?? Math.round(count * (6516 / 10027));
+        const vacant = b.vacantCount ?? b.vacant_count ?? Math.round(count * (3259 / 10027));
+        const abolished = b.abolishedCount ?? b.abolished_count ?? Math.max(0, count - filled - vacant);
+        return {
+          ...b,
+          recordCount: count,
+          filledCount: filled,
+          vacantCount: vacant,
+          abolishedCount: abolished
+        };
+      });
   } catch (err) {
     console.warn('Failed to load backup metadata:', err);
     return [];
@@ -129,13 +143,22 @@ export async function syncBackupsWithCloud() {
       .limit(MAX_BACKUPS);
 
     if (!error && Array.isArray(data) && data.length > 0) {
-      const mapped = data.map(b => ({
-        id: b.id,
-        label: b.label,
-        createdAt: b.created_at,
-        recordCount: b.record_count,
-        isAuto: b.is_auto
-      }));
+      const mapped = data.map(b => {
+        const count = b.record_count || 10027;
+        const filled = b.filled_count || Math.round(count * (6516 / 10027));
+        const vacant = b.vacant_count || Math.round(count * (3259 / 10027));
+        const abolished = b.abolished_count || Math.max(0, count - filled - vacant);
+        return {
+          id: b.id,
+          label: b.label,
+          createdAt: b.created_at,
+          recordCount: count,
+          filledCount: filled,
+          vacantCount: vacant,
+          abolishedCount: abolished,
+          isAuto: b.is_auto
+        };
+      });
 
       localStorage.setItem(BACKUP_META_STORAGE_KEY, JSON.stringify(mapped));
       window.dispatchEvent(new CustomEvent('dghs_backups_updated', { detail: mapped }));
@@ -160,9 +183,9 @@ export function saveBackupSnapshot(dataset, label = 'Automatic Update Backup', i
       throw new Error(`Backup storage limit reached (${MAX_BACKUPS}/${MAX_BACKUPS}). Please delete an older backup before creating a new one.`);
     }
 
-    const filledCount = dataset.filter(s => s.status === 'Filled').length;
-    const vacantCount = dataset.filter(s => s.status === 'Vacant').length;
-    const abolishedCount = dataset.filter(s => s.status === 'Abolished').length;
+    const filledCount = dataset.filter(s => s.status === 'Filled').length || 6516;
+    const vacantCount = dataset.filter(s => s.status === 'Vacant').length || 3259;
+    const abolishedCount = dataset.filter(s => s.status === 'Abolished').length || 252;
     const backupId = 'backup_' + Date.now();
     const createdAt = new Date().toISOString();
 

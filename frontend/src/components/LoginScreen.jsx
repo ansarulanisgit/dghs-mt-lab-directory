@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { loginUser, getLockoutState, MAX_LOGIN_ATTEMPTS } from '../lib/authStore';
+import { getSystemConfig } from '../lib/configStore';
 import { Lock, Mail, Eye, EyeOff, User, Users, ShieldCheck, ArrowRight, AlertCircle, ShieldAlert, Timer } from 'lucide-react';
 
 function formatLockoutCountdown(totalSeconds) {
@@ -12,12 +13,22 @@ function formatLockoutCountdown(totalSeconds) {
 }
 
 export default function LoginScreen({ onLoginSuccess }) {
+  const [config, setConfig] = useState(getSystemConfig());
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [lockoutInfo, setLockoutInfo] = useState(getLockoutState());
+
+  // Listen for config updates dynamically
+  useEffect(() => {
+    const handleConfigUpdate = (e) => {
+      setConfig(e.detail || getSystemConfig());
+    };
+    window.addEventListener('dghs_config_updated', handleConfigUpdate);
+    return () => window.removeEventListener('dghs_config_updated', handleConfigUpdate);
+  }, []);
 
   // Live countdown timer for lockout duration
   useEffect(() => {
@@ -71,10 +82,10 @@ export default function LoginScreen({ onLoginSuccess }) {
             <User className="w-8.5 h-8.5 sm:w-9 sm:h-9" />
           </div>
           <h1 className="text-[18px] sm:text-[22px] md:text-[26px] font-extrabold tracking-tight text-white">
-            DGHS Employee Directory
+            {config.loginTitle || config.appTitle || 'DGHS Employee Directory'}
           </h1>
           <p className="text-xs sm:text-sm text-slate-400 mt-1 font-medium">
-            Sign In to See the Directory
+            {config.loginSubtitle || 'Sign In to See the Directory'}
           </p>
         </div>
 
@@ -202,7 +213,7 @@ export default function LoginScreen({ onLoginSuccess }) {
         {/* Footer Credit */}
         <div className="mt-4 sm:mt-5 pt-3 sm:pt-4 border-t border-slate-800/60 text-center">
           <p className="text-[11px] sm:text-xs text-slate-400 font-medium">
-            Developed by <span className="text-emerald-400 font-semibold">Ansarul Anis</span>
+            {config.loginFooterText || config.footerText || 'Developed by Ansarul Anis'}
           </p>
         </div>
       </div>

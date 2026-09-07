@@ -879,14 +879,16 @@ export default function App() {
                   <span>{currentUser.username || currentUser.name}</span>
                 </div>
 
-                {/* Password-Protected Settings Button */}
-                <button
-                  onClick={() => setSettingsOpen(true)}
-                  className="p-1.5 sm:p-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 hover:text-emerald-700 text-slate-600 transition-colors cursor-pointer shadow-2xs"
-                  title="System & Scraper Settings (Password Protected)"
-                >
-                  <Settings className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                </button>
+                {/* Password-Protected Settings Button (Admin & Super Admin only; hidden for standard users) */}
+                {isFullAdmin && (
+                  <button
+                    onClick={() => setSettingsOpen(true)}
+                    className="p-1.5 sm:p-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 hover:text-emerald-700 text-slate-600 transition-colors cursor-pointer shadow-2xs"
+                    title="System & Scraper Settings (Admin Only)"
+                  >
+                    <Settings className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  </button>
+                )}
 
                 {/* Logout Button */}
                 <button
@@ -925,12 +927,14 @@ export default function App() {
                   >
                     Retry Update
                   </button>
-                  <button
-                    onClick={() => setSettingsOpen(true)}
-                    className="px-3 py-1.5 bg-white hover:bg-amber-100/80 border border-amber-300 text-amber-900 rounded-lg text-xs font-semibold transition-all cursor-pointer shadow-2xs"
-                  >
-                    View Stored Backups
-                  </button>
+                  {isFullAdmin && (
+                    <button
+                      onClick={() => setSettingsOpen(true)}
+                      className="px-3 py-1.5 bg-white hover:bg-amber-100/80 border border-amber-300 text-amber-900 rounded-lg text-xs font-semibold transition-all cursor-pointer shadow-2xs"
+                    >
+                      View Stored Backups
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -959,18 +963,22 @@ export default function App() {
                   Displaying restored snapshot: <strong className="font-bold text-teal-900">{activeRestoredBackup.label}</strong> (Created: {new Date(activeRestoredBackup.createdAt).toLocaleString('en-GB')}, {activeRestoredBackup.recordCount?.toLocaleString()} records).
                 </p>
                 <div className="flex flex-wrap items-center gap-2 mt-2.5">
-                  <button
-                    onClick={handleExitRestoredView}
-                    className="px-3 py-1.5 bg-teal-700 hover:bg-teal-800 text-white rounded-lg text-xs font-bold transition-all shadow-2xs cursor-pointer"
-                  >
-                    Switch Back to Latest Active
-                  </button>
-                  <button
-                    onClick={() => setSettingsOpen(true)}
-                    className="px-3 py-1.5 bg-white hover:bg-teal-100/80 border border-teal-300 text-teal-900 rounded-lg text-xs font-semibold transition-all cursor-pointer shadow-2xs"
-                  >
-                    Manage Stored Versions
-                  </button>
+                  {isFullAdmin && (
+                    <>
+                      <button
+                        onClick={handleExitRestoredView}
+                        className="px-3 py-1.5 bg-teal-700 hover:bg-teal-800 text-white rounded-lg text-xs font-bold transition-all shadow-2xs cursor-pointer"
+                      >
+                        Switch Back to Latest Active
+                      </button>
+                      <button
+                        onClick={() => setSettingsOpen(true)}
+                        className="px-3 py-1.5 bg-white hover:bg-teal-100/80 border border-teal-300 text-teal-900 rounded-lg text-xs font-semibold transition-all cursor-pointer shadow-2xs"
+                      >
+                        Manage Stored Versions
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
@@ -1161,8 +1169,8 @@ export default function App() {
         featureName={permissionDeniedFeature}
       />
 
-      {/* Password-Protected Settings Modal */}
-      {settingsOpen && (
+      {/* Password-Protected Settings Modal (Admin & Super Admin Only) */}
+      {settingsOpen && isFullAdmin && (
         <SettingsModal
           currentUser={currentUser}
           onClose={() => setSettingsOpen(false)}
