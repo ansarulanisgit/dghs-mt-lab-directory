@@ -10,11 +10,22 @@ export default defineConfig({
     chunkSizeWarningLimit: 8000,
     rollupOptions: {
       output: {
-        manualChunks: {
-          vendor: ['react', 'react-dom'],
-          icons: ['lucide-react'],
-          supabase: ['@supabase/supabase-js'],
-          pdf: ['jspdf', 'jspdf-autotable']
+        manualChunks(id) {
+          if (id.includes('scraped_records.json')) {
+            return 'directory-data';
+          }
+          if (id.includes('jspdf') || id.includes('html2canvas')) {
+            return 'pdf';
+          }
+          if (id.includes('@supabase')) {
+            return 'supabase';
+          }
+          if (id.includes('lucide-react')) {
+            return 'icons';
+          }
+          if (id.includes('node_modules/react') || id.includes('node_modules/react-dom')) {
+            return 'vendor';
+          }
         }
       }
     }

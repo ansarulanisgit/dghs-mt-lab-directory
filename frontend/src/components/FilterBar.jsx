@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, memo } from 'react';
 import { RotateCcw, ArrowUpDown, ChevronDown, Calendar } from 'lucide-react';
 import MultiSelectDropdown from './MultiSelectDropdown';
 import SearchAutocomplete from './SearchAutocomplete';
@@ -9,7 +9,7 @@ import {
   DISTRICT_TO_DIVISION_MAP 
 } from '../lib/bangladeshGeo';
 
-export default function FilterBar({
+function FilterBar({
   searchTerm,
   searchMeta = null,
   onSearchChange,
@@ -318,3 +318,5 @@ export default function FilterBar({
     </div>
   );
 }
+
+export default memo(FilterBar);

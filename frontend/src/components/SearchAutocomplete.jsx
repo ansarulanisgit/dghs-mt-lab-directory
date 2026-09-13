@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, memo } from 'react';
 import { Search, X, User, Building2, Hash, Award, MapPin, ArrowRight } from 'lucide-react';
 
 function highlightMatch(text, query) {
@@ -21,7 +21,7 @@ function highlightMatch(text, query) {
   );
 }
 
-export default function SearchAutocomplete({
+function SearchAutocomplete({
   value = '',
   onChange,
   searchMeta = null,
@@ -73,15 +73,22 @@ export default function SearchAutocomplete({
       const name = item.name || '';
       const institute = item.facility || item.current_institute || '';
       const hris = item.hris_id || '';
-      const postId = item.post_id || '';
+      const postId = item.post_id ? String(item.post_id) : '';
       const designation = item.designation || '';
       const upazila = item.upazila || '';
       const district = item.district || '';
       const isFilled = item.status === 'Filled' && !name.includes('[Vacant') && !name.includes('[Abolished');
 
+      const nameLower = item._nameLower !== undefined ? item._nameLower : name.toLowerCase();
+      const instLower = item._facilityLower !== undefined ? item._facilityLower : institute.toLowerCase();
+      const hrisLower = item._hrisLower !== undefined ? item._hrisLower : hris.toLowerCase();
+      const desigLower = item._desigLower !== undefined ? item._desigLower : designation.toLowerCase();
+      const upzLower = item._upzLower !== undefined ? item._upzLower : upazila.toLowerCase();
+      const distLower = item._distLower !== undefined ? item._distLower : district.toLowerCase();
+
       // 1. Staff Name Match (only real filled staff)
-      if (isFilled && name.toLowerCase().includes(q) && !seenNames.has(name.toLowerCase())) {
-        seenNames.add(name.toLowerCase());
+      if (isFilled && nameLower.includes(q) && !seenNames.has(nameLower)) {
+        seenNames.add(nameLower);
         nameMatches.push({
           type: 'name',
           category: 'Personnel',
@@ -94,8 +101,8 @@ export default function SearchAutocomplete({
       }
 
       // 2. Institute / Facility Match
-      if (institute && institute.toLowerCase().includes(q) && !seenInstitutes.has(institute.toLowerCase())) {
-        seenInstitutes.add(institute.toLowerCase());
+      if (instLower && instLower.includes(q) && !seenInstitutes.has(instLower)) {
+        seenInstitutes.add(instLower);
         instituteMatches.push({
           type: 'institute',
           category: 'Institute / Facility',
@@ -108,7 +115,7 @@ export default function SearchAutocomplete({
       }
 
       // 3. HRIS / Post ID Match
-      if (hris && hris !== 'VACANT' && hris !== 'ABOLISHED' && hris.toLowerCase().includes(q) && !seenHris.has(hris)) {
+      if (hris && hris !== 'VACANT' && hris !== 'ABOLISHED' && hrisLower.includes(q) && !seenHris.has(hris)) {
         seenHris.add(hris);
         hrisMatches.push({
           type: 'hris',
@@ -133,8 +140,8 @@ export default function SearchAutocomplete({
       }
 
       // 4. Designation Match
-      if (designation && designation.toLowerCase().includes(q) && !seenDesignations.has(designation.toLowerCase())) {
-        seenDesignations.add(designation.toLowerCase());
+      if (desigLower && desigLower.includes(q) && !seenDesignations.has(desigLower)) {
+        seenDesignations.add(desigLower);
         designationMatches.push({
           type: 'designation',
           category: 'Designation',
@@ -147,8 +154,8 @@ export default function SearchAutocomplete({
       }
 
       // 5. Upazila / District Match
-      const locKey = `${upazila}, ${district}`.toLowerCase();
-      if ((upazila.toLowerCase().includes(q) || district.toLowerCase().includes(q)) && !seenLocations.has(locKey) && upazila) {
+      const locKey = `${upzLower}, ${distLower}`;
+      if ((upzLower.includes(q) || distLower.includes(q)) && !seenLocations.has(locKey) && upazila) {
         seenLocations.add(locKey);
         locationMatches.push({
           type: 'location',
@@ -165,7 +172,8 @@ export default function SearchAutocomplete({
         nameMatches.length >= 4 &&
         instituteMatches.length >= 3 &&
         hrisMatches.length >= 2 &&
-        designationMatches.length >= 2
+        designationMatches.length >= 2 &&
+        locationMatches.length >= 2
       ) {
         break;
       }
@@ -329,3 +337,5 @@ export default function SearchAutocomplete({
     </div>
   );
 }
+
+export default memo(SearchAutocomplete);

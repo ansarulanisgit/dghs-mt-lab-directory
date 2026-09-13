@@ -1,8 +1,7 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef, lazy, Suspense } from 'react';
 import { supabase, isSupabaseConfigured, MOCK_STAFF, MOCK_METADATA } from './lib/supabaseClient';
 import { getCurrentUser, logoutUser, syncUsersWithCloud } from './lib/authStore';
 import { getSystemConfig, syncConfigWithCloud } from './lib/configStore';
-import { calculateTimeRemaining } from './lib/countdownUtil';
 import { getInstituteTierRank } from './lib/instituteHierarchy';
 import { getStoredTheme, toggleTheme } from './lib/themeStore';
 import { exportFilteredStaffPDF } from './lib/pdfExport';
@@ -13,14 +12,17 @@ import { syncPdfColumnsWithCloud } from './lib/pdfConfigStore';
 import StaffCard from './components/StaffCard';
 import FilterBar from './components/FilterBar';
 import Pagination from './components/Pagination';
-import StaffDetailModal from './components/StaffDetailModal';
-import SettingsModal from './components/SettingsModal';
 import LoginScreen from './components/LoginScreen';
 import PermissionDeniedModal from './components/PermissionDeniedModal';
+import CountdownBadge from './components/CountdownBadge';
 import {
-  Users, Clock, Settings, LogOut, AlertCircle, RefreshCw, Layers, User, FileDown, Timer,
+  Users, Clock, Settings, LogOut, AlertCircle, RefreshCw, Layers, User, FileDown,
   AlertTriangle, Info, X, ShieldAlert, CheckCircle2, ChevronUp, Lock, Sun, Moon
 } from 'lucide-react';
+
+// Lazy-loaded heavy modal components for optimal bundle splitting
+const StaffDetailModal = lazy(() => import('./components/StaffDetailModal'));
+const SettingsModal = lazy(() => import('./components/SettingsModal'));
 
 const PAGE_SIZE = 100; // 100 items per page
 
@@ -80,7 +82,7 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [isExportingPDF, setIsExportingPDF] = useState(false);
   const [error, setError] = useState(null);
-  const [countdownText, setCountdownText] = useState('');
+  const isInitialMount = useRef(true);
 
   // Resilience & Backup States
   const [activeRestoredBackup, setActiveRestoredBackup] = useState(getActiveBackupOverride());
@@ -117,17 +119,65 @@ export default function App() {
       : MOCK_STAFF;
   }, [activeRestoredBackup]);
 
-  const globalStats = useMemo(() => {
-    const total = activeDataset.length || 0;
-    const filled = activeDataset.filter(s => s.status === 'Filled').length || 0;
-    const vacant = activeDataset.filter(s => s.status === 'Vacant').length || 0;
-    const abolished = activeDataset.filter(s => s.status === 'Abolished').length || 0;
-    return { total, filled, vacant, abolished };
+  // Fast pre-indexed dataset with normalized search fields and precomputed ranks/IDs
+  const indexedDataset = useMemo(() => {
+    const len = activeDataset.length;
+    const result = new Array(len);
+    for (let i = 0; i < len; i++) {
+      const s = activeDataset[i];
+      const name = s.name || '';
+      const facility = s.facility || s.current_institute || '';
+      const facTrim = facility.trim();
+      const hris = s.hris_id || '';
+      const postId = s.post_id ? String(s.post_id) : '';
+      const desig = s.designation || '';
+      const disc = s.major_discipline || '';
+      const grp = s.designation_group || '';
+      const div = s.division || '';
+      const dist = s.district || '';
+      const upz = s.upazila || '';
+      const prl = s.prl_date ? s.prl_date.split('T')[0] : '';
+
+      result[i] = {
+        ...s,
+        _searchNorm: `${name} ${facility} ${hris} ${postId} ${dist} ${upz} ${desig} ${disc} ${grp}`.toLowerCase(),
+        _nameLower: name.toLowerCase(),
+        _facilityLower: facTrim.toLowerCase(),
+        _hrisLower: hris.toLowerCase(),
+        _postIdStr: postId,
+        _postIdNum: parseInt(postId, 10) || 0,
+        _desigLower: desig.toLowerCase(),
+        _discLower: disc.toLowerCase(),
+        _grpLower: grp.toLowerCase(),
+        _divLower: div.toLowerCase(),
+        _distLower: dist.toLowerCase(),
+        _upzLower: upz.toLowerCase(),
+        _genderLower: (s.gender || '').toLowerCase(),
+        _statusLower: (s.status || '').toLowerCase(),
+        _prlDateStr: prl,
+        _tierRank: getInstituteTierRank(facTrim)
+      };
+    }
+    return result;
   }, [activeDataset]);
+
+  const globalStats = useMemo(() => {
+    let filled = 0;
+    let vacant = 0;
+    let abolished = 0;
+    const len = indexedDataset.length;
+    for (let i = 0; i < len; i++) {
+      const st = indexedDataset[i]._statusLower;
+      if (st === 'filled') filled++;
+      else if (st === 'vacant') vacant++;
+      else if (st === 'abolished') abolished++;
+    }
+    return { total: len, filled, vacant, abolished };
+  }, [indexedDataset]);
 
   // Dynamic Post Status Counts (Updates dynamically when Designation Groups, Disciplines, Designations or other non-status filters are selected)
   const dynamicStatusStats = useMemo(() => {
-    let subset = activeDataset;
+    let subset = indexedDataset;
 
     // Apply Search (Exact if selected from suggestion, broad if typed words)
     if (debouncedSearch) {
@@ -140,49 +190,23 @@ export default function App() {
       if (isExact) {
         const targetLower = (searchMeta.target || '').trim().toLowerCase();
         if (searchMeta.type === 'institute') {
-          subset = subset.filter(s =>
-            (s.facility || s.current_institute || '').trim().toLowerCase() === targetLower
-          );
+          subset = subset.filter(s => s._facilityLower === targetLower);
         } else if (searchMeta.type === 'name') {
-          subset = subset.filter(s =>
-            (s.name || '').trim().toLowerCase() === targetLower
-          );
+          subset = subset.filter(s => s._nameLower === targetLower);
         } else if (searchMeta.type === 'hris') {
-          subset = subset.filter(s =>
-            (s.hris_id || '').trim().toLowerCase() === targetLower
-          );
+          subset = subset.filter(s => s._hrisLower === targetLower);
         } else if (searchMeta.type === 'post_id') {
-          subset = subset.filter(s =>
-            String(s.post_id || '').trim() === String(searchMeta.target).trim()
-          );
+          subset = subset.filter(s => s._postIdStr === String(searchMeta.target).trim());
         } else if (searchMeta.type === 'designation') {
-          subset = subset.filter(s =>
-            (s.designation || '').trim().toLowerCase() === targetLower
-          );
+          subset = subset.filter(s => s._desigLower === targetLower);
         } else if (searchMeta.type === 'location') {
-          subset = subset.filter(s =>
-            (s.upazila || '').toLowerCase() === targetLower ||
-            (s.district || '').toLowerCase() === targetLower
-          );
+          subset = subset.filter(s => s._upzLower === targetLower || s._distLower === targetLower);
         } else {
-          subset = subset.filter(s =>
-            (s.facility || s.current_institute || '').trim().toLowerCase() === targetLower
-          );
+          subset = subset.filter(s => s._facilityLower === targetLower);
         }
       } else {
         const q = debouncedSearch.toLowerCase();
-        subset = subset.filter(s =>
-          (s.name || '').toLowerCase().includes(q) ||
-          (s.current_institute || '').toLowerCase().includes(q) ||
-          (s.facility || '').toLowerCase().includes(q) ||
-          (s.hris_id || '').toLowerCase().includes(q) ||
-          (s.post_id || '').includes(q) ||
-          (s.district || '').toLowerCase().includes(q) ||
-          (s.upazila || '').toLowerCase().includes(q) ||
-          (s.designation || '').toLowerCase().includes(q) ||
-          (s.major_discipline || '').toLowerCase().includes(q) ||
-          (s.designation_group || '').toLowerCase().includes(q)
-        );
+        subset = subset.filter(s => s._searchNorm.includes(q));
       }
     }
 
@@ -203,46 +227,56 @@ export default function App() {
 
     // Apply Division
     if (selectedDivision) {
-      subset = subset.filter(s => (s.division || '').toLowerCase() === selectedDivision.toLowerCase());
+      const divLower = selectedDivision.toLowerCase();
+      subset = subset.filter(s => s._divLower === divLower);
     }
 
     // Apply District
     if (selectedDistrict) {
-      subset = subset.filter(s => (s.district || '').toLowerCase() === selectedDistrict.toLowerCase());
+      const distLower = selectedDistrict.toLowerCase();
+      subset = subset.filter(s => s._distLower === distLower);
     }
 
     // Apply Upazila
     if (selectedUpazila) {
       const upzQ = selectedUpazila.toLowerCase();
       subset = subset.filter(s => 
-        (s.upazila && s.upazila.toLowerCase() === upzQ) ||
-        (s.current_institute && s.current_institute.toLowerCase().includes(upzQ))
+        s._upzLower === upzQ ||
+        s._facilityLower.includes(upzQ)
       );
     }
 
     // Apply Gender
     if (selectedGender) {
-      subset = subset.filter(s => (s.gender || '').toLowerCase() === selectedGender.toLowerCase());
+      const genderLower = selectedGender.toLowerCase();
+      subset = subset.filter(s => s._genderLower === genderLower);
     }
 
     // Apply Hide Past PRL
     if (hidePastPRL) {
       const todayStr = new Date().toISOString().split('T')[0];
       subset = subset.filter(s => {
-        if (!s.prl_date) return s.status === 'Vacant' || s.status === 'Abolished';
-        return s.prl_date.split('T')[0] >= todayStr;
+        if (!s._prlDateStr) return s._statusLower === 'vacant' || s._statusLower === 'abolished';
+        return s._prlDateStr >= todayStr;
       });
     }
 
-    const total = subset.length;
-    const filled = subset.filter(s => s.status === 'Filled').length;
-    const vacant = subset.filter(s => s.status === 'Vacant').length;
-    const abolished = subset.filter(s => s.status === 'Abolished').length;
+    let filled = 0;
+    let vacant = 0;
+    let abolished = 0;
+    const len = subset.length;
+    for (let i = 0; i < len; i++) {
+      const st = subset[i]._statusLower;
+      if (st === 'filled') filled++;
+      else if (st === 'vacant') vacant++;
+      else if (st === 'abolished') abolished++;
+    }
 
-    return { total, filled, vacant, abolished };
+    return { total: len, filled, vacant, abolished };
   }, [
-    activeDataset,
+    indexedDataset,
     debouncedSearch,
+    searchMeta,
     selectedDesignationGroups,
     selectedDisciplines,
     selectedDesignations,
@@ -318,27 +352,14 @@ export default function App() {
   }, []);
 
   // System & Branding Config State
-  const [appConfig, setAppConfig] = useState(getSystemConfig());
+  const [appConfig, setAppConfig] = useState(() => getSystemConfig());
 
-  // Universal Central Live Countdown based on configured interval days & central anchor timestamp
+  // Listen for config updates without constant polling
   useEffect(() => {
-    function updateCountdown() {
-      const config = getSystemConfig();
-      setAppConfig(config);
-      const text = calculateTimeRemaining(config.scheduleIntervalDays || 7, metadata?.last_run_at || MOCK_METADATA.last_run_at);
-      setCountdownText(text);
-    }
-
-    updateCountdown();
-    const interval = setInterval(updateCountdown, 1000);
-    const handleConfigUpdate = () => updateCountdown();
+    const handleConfigUpdate = () => setAppConfig(getSystemConfig());
     window.addEventListener('dghs_config_updated', handleConfigUpdate);
-
-    return () => {
-      clearInterval(interval);
-      window.removeEventListener('dghs_config_updated', handleConfigUpdate);
-    };
-  }, [metadata]);
+    return () => window.removeEventListener('dghs_config_updated', handleConfigUpdate);
+  }, []);
 
   // Search Change Handler (Supports exact suggestion match or broad typing)
   const handleSearchChange = (val, meta = null) => {
@@ -487,10 +508,12 @@ export default function App() {
 
   // Fetch Staff Records with Filtering, Pagination & Sorting
   const fetchStaff = useCallback(async () => {
-    setIsLoading(true);
+    if (isInitialMount.current) {
+      setIsLoading(true);
+    }
     setError(null);
 
-    // Fallback or Local / Restored Dataset Filtering
+    // High performance local dataset filtering and sorting
     const runLocalFilter = (sourceData) => {
       let filtered = [...sourceData];
 
@@ -505,49 +528,23 @@ export default function App() {
         if (isExact) {
           const targetLower = (searchMeta.target || '').trim().toLowerCase();
           if (searchMeta.type === 'institute') {
-            filtered = filtered.filter(s =>
-              (s.facility || s.current_institute || '').trim().toLowerCase() === targetLower
-            );
+            filtered = filtered.filter(s => s._facilityLower === targetLower);
           } else if (searchMeta.type === 'name') {
-            filtered = filtered.filter(s =>
-              (s.name || '').trim().toLowerCase() === targetLower
-            );
+            filtered = filtered.filter(s => s._nameLower === targetLower);
           } else if (searchMeta.type === 'hris') {
-            filtered = filtered.filter(s =>
-              (s.hris_id || '').trim().toLowerCase() === targetLower
-            );
+            filtered = filtered.filter(s => s._hrisLower === targetLower);
           } else if (searchMeta.type === 'post_id') {
-            filtered = filtered.filter(s =>
-              String(s.post_id || '').trim() === String(searchMeta.target).trim()
-            );
+            filtered = filtered.filter(s => s._postIdStr === String(searchMeta.target).trim());
           } else if (searchMeta.type === 'designation') {
-            filtered = filtered.filter(s =>
-              (s.designation || '').trim().toLowerCase() === targetLower
-            );
+            filtered = filtered.filter(s => s._desigLower === targetLower);
           } else if (searchMeta.type === 'location') {
-            filtered = filtered.filter(s =>
-              (s.upazila || '').toLowerCase() === targetLower ||
-              (s.district || '').toLowerCase() === targetLower
-            );
+            filtered = filtered.filter(s => s._upzLower === targetLower || s._distLower === targetLower);
           } else {
-            filtered = filtered.filter(s =>
-              (s.facility || s.current_institute || '').trim().toLowerCase() === targetLower
-            );
+            filtered = filtered.filter(s => s._facilityLower === targetLower);
           }
         } else {
           const q = debouncedSearch.toLowerCase();
-          filtered = filtered.filter(s =>
-            (s.name || '').toLowerCase().includes(q) ||
-            (s.current_institute || '').toLowerCase().includes(q) ||
-            (s.facility || '').toLowerCase().includes(q) ||
-            (s.hris_id || '').toLowerCase().includes(q) ||
-            (s.post_id || '').includes(q) ||
-            (s.district || '').toLowerCase().includes(q) ||
-            (s.upazila || '').toLowerCase().includes(q) ||
-            (s.designation || '').toLowerCase().includes(q) ||
-            (s.major_discipline || '').toLowerCase().includes(q) ||
-            (s.designation_group || '').toLowerCase().includes(q)
-          );
+          filtered = filtered.filter(s => s._searchNorm.includes(q));
         }
       }
 
@@ -568,68 +565,68 @@ export default function App() {
 
       // 5. Status Filter (Filled, Vacant, Abolished)
       if (selectedStatus) {
-        filtered = filtered.filter(s => (s.status || '').toLowerCase() === selectedStatus.toLowerCase());
+        const statusLower = selectedStatus.toLowerCase();
+        filtered = filtered.filter(s => s._statusLower === statusLower);
       }
 
       // 6. Division Filter
       if (selectedDivision) {
-        filtered = filtered.filter(s => (s.division || '').toLowerCase() === selectedDivision.toLowerCase());
+        const divLower = selectedDivision.toLowerCase();
+        filtered = filtered.filter(s => s._divLower === divLower);
       }
 
       // 7. District Filter
       if (selectedDistrict) {
-        filtered = filtered.filter(s => (s.district || '').toLowerCase() === selectedDistrict.toLowerCase());
+        const distLower = selectedDistrict.toLowerCase();
+        filtered = filtered.filter(s => s._distLower === distLower);
       }
 
       // 8. Upazila Filter
       if (selectedUpazila) {
         const upzQ = selectedUpazila.toLowerCase();
         filtered = filtered.filter(s => 
-          (s.upazila && s.upazila.toLowerCase() === upzQ) ||
-          (s.current_institute && s.current_institute.toLowerCase().includes(upzQ))
+          s._upzLower === upzQ ||
+          s._facilityLower.includes(upzQ)
         );
       }
 
       // 9. Gender Filter
       if (selectedGender) {
-        filtered = filtered.filter(s => (s.gender || '').toLowerCase() === selectedGender.toLowerCase());
+        const genderLower = selectedGender.toLowerCase();
+        filtered = filtered.filter(s => s._genderLower === genderLower);
       }
 
       // 10. Hide Past PRL Filter (Reference: Today's date YYYY-MM-DD)
       if (hidePastPRL) {
         const todayStr = new Date().toISOString().split('T')[0];
         filtered = filtered.filter(s => {
-          if (!s.prl_date) {
-            return s.status === 'Vacant' || s.status === 'Abolished';
+          if (!s._prlDateStr) {
+            return s._statusLower === 'vacant' || s._statusLower === 'abolished';
           }
-          const itemDate = s.prl_date.split('T')[0];
-          return itemDate >= todayStr;
+          return s._prlDateStr >= todayStr;
         });
       }
 
-      // 11. Robust Sorting
+      // 11. Robust Fast Sorting (Instant integer & fast string comparisons)
       filtered.sort((a, b) => {
         if (sortBy === 'prl_date') {
-          const valA = a.prl_date || '';
-          const valB = b.prl_date || '';
+          const valA = a._prlDateStr || '';
+          const valB = b._prlDateStr || '';
           if (!valA && valB) return 1;
           if (valA && !valB) return -1;
           if (!valA && !valB) return 0;
-          return sortOrder === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+          return sortOrder === 'asc' ? (valA < valB ? -1 : valA > valB ? 1 : 0) : (valB < valA ? -1 : valB > valA ? 1 : 0);
         }
 
         if (sortBy === 'post_id') {
-          const idA = parseInt(a.post_id, 10) || 0;
-          const idB = parseInt(b.post_id, 10) || 0;
+          const idA = a._postIdNum;
+          const idB = b._postIdNum;
           return sortOrder === 'asc' ? idA - idB : idB - idA;
         }
 
         if (sortBy === 'institute_tier') {
-          const facA = (a.facility || a.current_institute || '').trim();
-          const facB = (b.facility || b.current_institute || '').trim();
-
-          const rankA = getInstituteTierRank(facA);
-          const rankB = getInstituteTierRank(facB);
+          const rankA = a._tierRank;
+          const rankB = b._tierRank;
 
           // 1. Primary Sort: Institute Tier (Higher tier first)
           if (rankA !== rankB) {
@@ -637,30 +634,30 @@ export default function App() {
           }
 
           // 2. Secondary Sort: Group ALL posts of the SAME institute together!
-          const facCompare = facA.localeCompare(facB);
-          if (facCompare !== 0) {
-            return facCompare;
+          const facA = a._facilityLower;
+          const facB = b._facilityLower;
+          if (facA !== facB) {
+            return facA < facB ? -1 : 1;
           }
 
-          // 3. Tertiary Sort: Sort posts inside the institute by status / designation / post_id
-          const desA = (a.designation || '').toLowerCase();
-          const desB = (b.designation || '').toLowerCase();
-          const desComp = desA.localeCompare(desB);
-          if (desComp !== 0) return desComp;
+          // 3. Tertiary Sort: Sort posts inside the institute by designation / post_id
+          const desA = a._desigLower;
+          const desB = b._desigLower;
+          if (desA !== desB) {
+            return desA < desB ? -1 : 1;
+          }
 
-          const idA = parseInt(a.post_id, 10) || 0;
-          const idB = parseInt(b.post_id, 10) || 0;
-          return idA - idB;
+          return a._postIdNum - b._postIdNum;
         }
 
         if (sortBy === 'name') {
-          const isVacA = a.status === 'Vacant' || a.status === 'Abolished';
-          const isVacB = b.status === 'Vacant' || b.status === 'Abolished';
+          const isVacA = a._statusLower === 'vacant' || a._statusLower === 'abolished';
+          const isVacB = b._statusLower === 'vacant' || b._statusLower === 'abolished';
           if (isVacA && !isVacB) return 1;
           if (!isVacA && isVacB) return -1;
-          const nameA = (a.name || '').toLowerCase();
-          const nameB = (b.name || '').toLowerCase();
-          return sortOrder === 'asc' ? nameA.localeCompare(nameB) : nameB.localeCompare(nameA);
+          const nameA = a._nameLower;
+          const nameB = b._nameLower;
+          return sortOrder === 'asc' ? (nameA < nameB ? -1 : nameA > nameB ? 1 : 0) : (nameB < nameA ? -1 : nameB > nameA ? 1 : 0);
         }
 
         return 0;
@@ -672,12 +669,14 @@ export default function App() {
       const to = from + PAGE_SIZE;
       setStaffList(filtered.slice(from, to));
       setIsLoading(false);
+      isInitialMount.current = false;
     };
 
-    runLocalFilter(activeDataset);
+    runLocalFilter(indexedDataset);
   }, [
-    activeDataset,
+    indexedDataset,
     debouncedSearch,
+    searchMeta,
     selectedDesignationGroups,
     selectedDisciplines,
     selectedDesignations,
@@ -856,13 +855,13 @@ export default function App() {
     }
   };
 
-  const handleSelectStaff = (staff) => {
+  const handleSelectStaff = useCallback((staff) => {
     if (!canViewDetails) {
       setPermissionDeniedFeature('View Full Details');
       return;
     }
     setSelectedStaff(staff);
-  };
+  }, [canViewDetails]);
 
   const formatTimestamp = (ts) => {
     if (!ts) return 'Live';
@@ -910,17 +909,7 @@ export default function App() {
           <div className="mt-3 sm:mt-0 w-full sm:w-auto bg-slate-50/80 dark:bg-slate-800/60 sm:bg-transparent sm:dark:bg-transparent border border-slate-200/80 dark:border-slate-700/60 sm:border-transparent sm:dark:border-transparent rounded-2xl p-3 sm:p-0 shadow-2xs sm:shadow-none flex flex-col-reverse sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-2">
             {/* On mobile: Row 2 (Next Update In) + Theme Switcher | On desktop: First in row */}
             <div className="flex items-center gap-2 w-full sm:w-auto">
-              <div className={`inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-full ${countdownText === 'Update Due' ? 'bg-amber-50 dark:bg-amber-950/60 border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-200' : 'bg-emerald-50 dark:bg-emerald-950/60 border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200'} border text-[11px] sm:text-xs font-semibold shadow-2xs w-fit self-start sm:self-auto shrink-0`}>
-                <Timer className={`w-3.5 h-3.5 ${countdownText === 'Update Due' ? 'text-amber-600 dark:text-amber-400 animate-spin' : 'text-emerald-600 dark:text-emerald-400 animate-pulse'}`} />
-                {countdownText === 'Update Due' ? (
-                  <span className="flex items-center gap-1.5">
-                    <span>Auto-Update:</span>
-                    <strong className="font-bold text-amber-900 dark:text-amber-200">Update Due (Syncing...)</strong>
-                  </span>
-                ) : (
-                  <span>Next Update In: <strong className="font-mono font-bold text-emerald-900 dark:text-emerald-300">{countdownText || 'Calculating...'}</strong></span>
-                )}
-              </div>
+              <CountdownBadge lastRunAt={metadata?.last_run_at} />
 
               {/* Mobile Theme Toggle Button (Visible only on mobile: sm:hidden) */}
               <button
@@ -1087,7 +1076,7 @@ export default function App() {
           searchTerm={searchTerm}
           searchMeta={searchMeta}
           onSearchChange={handleSearchChange}
-          dataset={activeDataset}
+          dataset={indexedDataset}
           selectedDesignationGroups={selectedDesignationGroups}
           onDesignationGroupsChange={handleDesignationGroupsChange}
           designationGroupOptions={designationGroupOptions}
@@ -1243,13 +1232,15 @@ export default function App() {
 
       {/* Staff Detail Modal */}
       {selectedStaff && (
-        <StaffDetailModal
-          staff={selectedStaff}
-          onClose={() => setSelectedStaff(null)}
-          canViewHris={canViewHris}
-          canViewPhone={canViewPhone}
-          canViewPrl={canViewPrl}
-        />
+        <Suspense fallback={null}>
+          <StaffDetailModal
+            staff={selectedStaff}
+            onClose={() => setSelectedStaff(null)}
+            canViewHris={canViewHris}
+            canViewPhone={canViewPhone}
+            canViewPrl={canViewPrl}
+          />
+        </Suspense>
       )}
 
       {/* Permission Denied Feature Popup */}
@@ -1261,14 +1252,16 @@ export default function App() {
 
       {/* Password-Protected Settings Modal (Admin & Super Admin Only) */}
       {settingsOpen && isFullAdmin && (
-        <SettingsModal
-          currentUser={currentUser}
-          onClose={() => setSettingsOpen(false)}
-          onForceUpdate={handleForceUpdate}
-          onManualSnapshot={handleManualSnapshot}
-          dynamicStats={globalStats}
-          metadata={metadata}
-        />
+        <Suspense fallback={null}>
+          <SettingsModal
+            currentUser={currentUser}
+            onClose={() => setSettingsOpen(false)}
+            onForceUpdate={handleForceUpdate}
+            onManualSnapshot={handleManualSnapshot}
+            dynamicStats={globalStats}
+            metadata={metadata}
+          />
+        </Suspense>
       )}
 
       {/* Footer */}

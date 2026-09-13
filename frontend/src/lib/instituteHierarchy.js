@@ -11,10 +11,25 @@
 // Tier 7: Upazila Health Administration & Upazila Health Complexes (Upazila Health & Family Planning Officer, UHC, Upazila Health Office, 10/20/31/50 Bed Hospitals)
 // Tier 8: Union & Community Health Services (UH&FWC, Union Sub-Center, Rural Health Center, Family Welfare Center, Community Clinic, Urban Dispensary, School/Port Health)
 
-export function getInstituteTierRank(facilityName = '') {
-  const f = (facilityName || '').toLowerCase().trim();
-  if (!f) return 99;
+const tierCache = new Map();
 
+export function getInstituteTierRank(facilityName = '') {
+  if (!facilityName) return 99;
+  const cached = tierCache.get(facilityName);
+  if (cached !== undefined) return cached;
+
+  const f = facilityName.toLowerCase().trim();
+  if (!f) {
+    tierCache.set(facilityName, 99);
+    return 99;
+  }
+
+  const rank = computeTierRank(f);
+  tierCache.set(facilityName, rank);
+  return rank;
+}
+
+function computeTierRank(f) {
   // Tier 8: Union & Community Health Services (PDF Section 6 & 19)
   if (
     f.includes('union') ||
