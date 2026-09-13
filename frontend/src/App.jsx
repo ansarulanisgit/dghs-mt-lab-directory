@@ -908,20 +908,37 @@ export default function App() {
 
           {/* Header Actions Card: Styled as a clean card on mobile with space above */}
           <div className="mt-3 sm:mt-0 w-full sm:w-auto bg-slate-50/80 dark:bg-slate-800/60 sm:bg-transparent sm:dark:bg-transparent border border-slate-200/80 dark:border-slate-700/60 sm:border-transparent sm:dark:border-transparent rounded-2xl p-3 sm:p-0 shadow-2xs sm:shadow-none flex flex-col-reverse sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-2">
-            {/* On mobile: Row 2 (Next Update In - content width) | On desktop: First in row */}
-            <div className={`inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-full ${countdownText === 'Update Due' ? 'bg-amber-50 dark:bg-amber-950/60 border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-200' : 'bg-emerald-50 dark:bg-emerald-950/60 border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200'} border text-[11px] sm:text-xs font-semibold shadow-2xs w-fit self-start sm:self-auto shrink-0`}>
-              <Timer className={`w-3.5 h-3.5 ${countdownText === 'Update Due' ? 'text-amber-600 dark:text-amber-400 animate-spin' : 'text-emerald-600 dark:text-emerald-400 animate-pulse'}`} />
-              {countdownText === 'Update Due' ? (
-                <span className="flex items-center gap-1.5">
-                  <span>Auto-Update:</span>
-                  <strong className="font-bold text-amber-900 dark:text-amber-200">Update Due (Syncing...)</strong>
-                </span>
-              ) : (
-                <span>Next Update In: <strong className="font-mono font-bold text-emerald-900 dark:text-emerald-300">{countdownText || 'Calculating...'}</strong></span>
-              )}
+            {/* On mobile: Row 2 (Next Update In) + Theme Switcher | On desktop: First in row */}
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <div className={`inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-full ${countdownText === 'Update Due' ? 'bg-amber-50 dark:bg-amber-950/60 border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-200' : 'bg-emerald-50 dark:bg-emerald-950/60 border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200'} border text-[11px] sm:text-xs font-semibold shadow-2xs w-fit self-start sm:self-auto shrink-0`}>
+                <Timer className={`w-3.5 h-3.5 ${countdownText === 'Update Due' ? 'text-amber-600 dark:text-amber-400 animate-spin' : 'text-emerald-600 dark:text-emerald-400 animate-pulse'}`} />
+                {countdownText === 'Update Due' ? (
+                  <span className="flex items-center gap-1.5">
+                    <span>Auto-Update:</span>
+                    <strong className="font-bold text-amber-900 dark:text-amber-200">Update Due (Syncing...)</strong>
+                  </span>
+                ) : (
+                  <span>Next Update In: <strong className="font-mono font-bold text-emerald-900 dark:text-emerald-300">{countdownText || 'Calculating...'}</strong></span>
+                )}
+              </div>
+
+              {/* Mobile Theme Toggle Button (Visible only on mobile: sm:hidden) */}
+              <button
+                type="button"
+                onClick={() => setTheme(toggleTheme())}
+                className="sm:hidden p-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-emerald-700 dark:hover:text-amber-400 text-slate-600 dark:text-amber-400 transition-all cursor-pointer shadow-2xs flex items-center justify-center shrink-0"
+                title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+                aria-label="Toggle theme"
+              >
+                {theme === 'dark' ? (
+                  <Sun className="w-3.5 h-3.5 text-amber-400 animate-in spin-in-90 duration-200" />
+                ) : (
+                  <Moon className="w-3.5 h-3.5 text-slate-600 animate-in spin-in-90 duration-200" />
+                )}
+              </button>
             </div>
 
-            {/* On mobile: Row 1 (Last Updated, User, Theme Toggle, Settings, Logout) | On desktop: Follows Next Update In */}
+            {/* On mobile: Row 1 (Last Updated, User, Settings, Logout) | On desktop: Follows Next Update In */}
             <div className="flex items-center justify-between sm:justify-start gap-1.5 sm:gap-2 w-full sm:w-auto">
               {/* Last Updated Badge */}
               <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white dark:bg-slate-800 sm:bg-slate-100 sm:dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-[11px] sm:text-xs font-medium shadow-2xs sm:shadow-none shrink-0">
@@ -929,7 +946,7 @@ export default function App() {
                 <span>Last Updated: <strong className="font-semibold text-slate-900 dark:text-white">{formatTimestamp(metadata?.last_run_at)}</strong></span>
               </div>
 
-              {/* User Actions Group (User pill, Theme Switcher, Settings, Logout) */}
+              {/* User Actions Group (User pill, Desktop Theme Switcher, Settings, Logout) */}
               <div className="flex items-center gap-1.5 shrink-0">
                 {/* Current User Pill (Showing only username) */}
                 <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white dark:bg-slate-800 sm:bg-slate-100 sm:dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-[11px] sm:text-xs font-semibold shadow-2xs sm:shadow-none">
@@ -937,11 +954,11 @@ export default function App() {
                   <span>{currentUser.username || currentUser.name}</span>
                 </div>
 
-                {/* Theme Toggle Switcher Button (Placed before the Settings icon) */}
+                {/* Desktop Theme Toggle Switcher Button (Placed before Settings icon; hidden on mobile) */}
                 <button
                   type="button"
                   onClick={() => setTheme(toggleTheme())}
-                  className="p-1.5 sm:p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-emerald-700 dark:hover:text-amber-400 text-slate-600 dark:text-amber-400 transition-all cursor-pointer shadow-2xs flex items-center justify-center"
+                  className="hidden sm:flex p-1.5 sm:p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-emerald-700 dark:hover:text-amber-400 text-slate-600 dark:text-amber-400 transition-all cursor-pointer shadow-2xs items-center justify-center"
                   title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
                   aria-label="Toggle theme"
                 >
