@@ -12,10 +12,13 @@ on:
         type: boolean
         default: false
 
+permissions:
+  contents: write
+
 jobs:
   scrape-and-sync:
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 45
 
     steps:
       - name: Checkout repository
@@ -31,14 +34,16 @@ jobs:
       - name: Install Scraper Dependencies
         working-directory: ./scraper
         run: |
-          npm ci
+          npm ci || npm install
           npx playwright install --with-deps chromium
 
       - name: Execute DGHS Directory Harvest & Synchronization
         working-directory: ./scraper
         env:
-          DGHS_USERNAME: ${{ secrets.DGHS_USERNAME }}
-          DGHS_PASSWORD: ${{ secrets.DGHS_PASSWORD }}
+          HRM_USERNAME: ${{ secrets.HRM_USERNAME || secrets.DGHS_USERNAME }}
+          HRM_PASSWORD: ${{ secrets.HRM_PASSWORD || secrets.DGHS_PASSWORD }}
+          DGHS_USERNAME: ${{ secrets.DGHS_USERNAME || secrets.HRM_USERNAME }}
+          DGHS_PASSWORD: ${{ secrets.DGHS_PASSWORD || secrets.HRM_PASSWORD }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: |

@@ -4,6 +4,8 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 
+import { getSupabaseClient } from './upsertToSupabase.js';
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -12,12 +14,42 @@ dotenv.config({ path: path.join(__dirname, '.env') });
 export const STORAGE_STATE_PATH = path.join(__dirname, 'storageState.json');
 export const LOGIN_URL = 'https://hrm.dghs.gov.bd/login';
 
+export async function getDghsCredentials() {
+  let username = process.env.HRM_USERNAME?.trim() || process.env.DGHS_USERNAME?.trim();
+  let password = process.env.HRM_PASSWORD?.trim() || process.env.DGHS_PASSWORD?.trim();
+
+  // If missing or truncated in process.env, load dynamically from Supabase system_config
+  if (!username || !password || password.length < 5) {
+    try {
+      const supabase = getSupabaseClient();
+      if (supabase) {
+        const { data: configRow } = await supabase
+          .from('system_config')
+          .select('config_data')
+          .eq('id', 1)
+          .maybeSingle();
+
+        if (configRow?.config_data?.portalUsername) {
+          username = configRow.config_data.portalUsername.trim();
+        }
+        if (configRow?.config_data?.portalPassword) {
+          password = configRow.config_data.portalPassword.trim();
+        }
+        console.log('[login] Successfully resolved DGHS credentials from Supabase system_config.');
+      }
+    } catch (dbErr) {
+      console.warn('[login] Warning checking Supabase system_config for credentials:', dbErr.message);
+    }
+  }
+
+  return { username, password };
+}
+
 export async function login(forceRelogin = false) {
-  const username = process.env.HRM_USERNAME?.trim();
-  const password = process.env.HRM_PASSWORD?.trim();
+  const { username, password } = await getDghsCredentials();
 
   if (!username || !password) {
-    throw new Error('HRM_USERNAME or HRM_PASSWORD is not set in environment.');
+    throw new Error('DGHS login credentials not found in environment (HRM_USERNAME/DGHS_USERNAME) or Supabase system_config.');
   }
 
   const browser = await chromium.launch({ headless: true });

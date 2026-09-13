@@ -868,9 +868,16 @@ export default function App() {
           {/* Header Actions Card: Styled as a clean card on mobile with space above */}
           <div className="mt-3 sm:mt-0 w-full sm:w-auto bg-slate-50/80 sm:bg-transparent border border-slate-200/80 sm:border-transparent rounded-2xl p-3 sm:p-0 shadow-2xs sm:shadow-none flex flex-col-reverse sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-2">
             {/* On mobile: Row 2 (Next Update In - content width) | On desktop: First in row */}
-            <div className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] sm:text-xs font-semibold shadow-2xs w-fit self-start sm:self-auto shrink-0">
-              <Timer className="w-3.5 h-3.5 text-emerald-600 animate-pulse" />
-              <span>Next Update In: <strong className="font-mono font-bold text-emerald-900">{countdownText || 'Calculating...'}</strong></span>
+            <div className={`inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-full ${countdownText === 'Update Due' ? 'bg-amber-50 border-amber-200 text-amber-800' : 'bg-emerald-50 border-emerald-200 text-emerald-800'} border text-[11px] sm:text-xs font-semibold shadow-2xs w-fit self-start sm:self-auto shrink-0`}>
+              <Timer className={`w-3.5 h-3.5 ${countdownText === 'Update Due' ? 'text-amber-600 animate-spin' : 'text-emerald-600 animate-pulse'}`} />
+              {countdownText === 'Update Due' ? (
+                <span className="flex items-center gap-1.5">
+                  <span>Auto-Update:</span>
+                  <strong className="font-bold text-amber-900">Update Due (Syncing...)</strong>
+                </span>
+              ) : (
+                <span>Next Update In: <strong className="font-mono font-bold text-emerald-900">{countdownText || 'Calculating...'}</strong></span>
+              )}
             </div>
 
             {/* On mobile: Row 1 (Last Updated, User, Settings, Logout in single row) | On desktop: Follows Next Update In */}

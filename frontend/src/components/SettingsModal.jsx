@@ -1307,9 +1307,13 @@ export default function SettingsModal({ currentUser, onClose, onForceUpdate, dyn
                       </div>
 
                       {/* Countdown Display */}
-                      <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 font-medium text-xs border border-slate-200">
-                        <Clock className="w-3.5 h-3.5 text-emerald-600" />
-                        <span>Next auto-update in: <strong className="font-mono font-bold text-emerald-800">{countdownText}</strong></span>
+                      <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg ${countdownText === 'Update Due' ? 'bg-amber-50 text-amber-800 border-amber-200' : 'bg-slate-100 text-slate-700 border-slate-200'} font-medium text-xs border`}>
+                        <Clock className={`w-3.5 h-3.5 ${countdownText === 'Update Due' ? 'text-amber-600 animate-spin' : 'text-emerald-600'}`} />
+                        {countdownText === 'Update Due' ? (
+                          <span>Status: <strong className="font-mono font-bold text-amber-900">Auto-Update Due (Syncing...)</strong></span>
+                        ) : (
+                          <span>Next auto-update in: <strong className="font-mono font-bold text-emerald-800">{countdownText}</strong></span>
+                        )}
                       </div>
                     </div>
                   </div>
