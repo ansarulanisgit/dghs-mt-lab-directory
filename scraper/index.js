@@ -89,14 +89,14 @@ export async function runScraper(options = {}) {
       'facility.division_name',
       'facility.district_name',
       'facility.upazila_name',
-      'facility.name',
+      'facility.name as facility_name',
       'provider.id',
       'provider.contact_no',
       'provider.dob',
       'provider.retirement_date',
       'provider.national_id_no',
-      'sanctioned_posts.name',
-      'provider.name'
+      'sanctioned_posts.name as sanctioned_post_name',
+      'provider.name as provider_name'
     ].join(',');
 
     const reportGroups = [
@@ -196,7 +196,7 @@ export async function runScraper(options = {}) {
         abolishedCount++;
       } else {
         filledCount++;
-        const provName = raw.name ? String(raw.name).trim() : '';
+        const provName = raw.provider_name ? String(raw.provider_name).trim() : (raw.name ? String(raw.name).trim() : '');
         if (provName && !provName.includes('»') && !provName.toLowerCase().includes('hospital') && !provName.toLowerCase().includes('complex')) {
           name = provName;
         } else {
@@ -222,7 +222,7 @@ export async function runScraper(options = {}) {
       const division = raw.division_name || 'Dhaka';
       const district = raw.district_name || 'Dhaka';
       const upazila = raw.upazila_name || district;
-      const facility = raw.facility_name || `${upazila} Upazila Health Complex`;
+      const facility = raw.facility_name ? String(raw.facility_name).trim() : (raw.facility ? String(raw.facility).trim() : `${upazila} Upazila Health Complex`);
 
       const record = {
         id: `post-${postId}-${idx}`,

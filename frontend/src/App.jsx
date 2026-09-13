@@ -3,6 +3,7 @@ import { supabase, isSupabaseConfigured, MOCK_STAFF, MOCK_METADATA } from './lib
 import { getCurrentUser, logoutUser, syncUsersWithCloud } from './lib/authStore';
 import { getSystemConfig, syncConfigWithCloud } from './lib/configStore';
 import { calculateTimeRemaining } from './lib/countdownUtil';
+import { getInstituteTierRank } from './lib/instituteHierarchy';
 import { exportFilteredStaffPDF } from './lib/pdfExport';
 import {
   getBackups, saveBackupSnapshot, getActiveBackupOverride, clearBackupOverride, syncBackupsWithCloud
@@ -610,6 +611,35 @@ export default function App() {
           const idA = parseInt(a.post_id, 10) || 0;
           const idB = parseInt(b.post_id, 10) || 0;
           return sortOrder === 'asc' ? idA - idB : idB - idA;
+        }
+
+        if (sortBy === 'institute_tier') {
+          const facA = (a.facility || a.current_institute || '').trim();
+          const facB = (b.facility || b.current_institute || '').trim();
+
+          const rankA = getInstituteTierRank(facA);
+          const rankB = getInstituteTierRank(facB);
+
+          // 1. Primary Sort: Institute Tier (Higher tier first)
+          if (rankA !== rankB) {
+            return sortOrder === 'asc' ? rankA - rankB : rankB - rankA;
+          }
+
+          // 2. Secondary Sort: Group ALL posts of the SAME institute together!
+          const facCompare = facA.localeCompare(facB);
+          if (facCompare !== 0) {
+            return facCompare;
+          }
+
+          // 3. Tertiary Sort: Sort posts inside the institute by status / designation / post_id
+          const desA = (a.designation || '').toLowerCase();
+          const desB = (b.designation || '').toLowerCase();
+          const desComp = desA.localeCompare(desB);
+          if (desComp !== 0) return desComp;
+
+          const idA = parseInt(a.post_id, 10) || 0;
+          const idB = parseInt(b.post_id, 10) || 0;
+          return idA - idB;
         }
 
         if (sortBy === 'name') {

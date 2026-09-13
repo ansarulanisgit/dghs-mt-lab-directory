@@ -145,6 +145,7 @@ export default function FilterBar({
             >
               <option value="prl_date-asc">PRL Date (Earliest first)</option>
               <option value="prl_date-desc">PRL Date (Latest first)</option>
+              <option value="institute_tier-asc">Institute Higher to lower</option>
               <option value="post_id-asc">Post ID (Ascending ↑)</option>
               <option value="post_id-desc">Post ID (Descending ↓)</option>
               <option value="name-asc">Name (A → Z)</option>
