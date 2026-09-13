@@ -70,7 +70,7 @@ export default function Pagination({
         <button
           onClick={() => onPageChange(1)}
           disabled={currentPage === 1}
-          className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed text-slate-700 transition-colors cursor-pointer"
+          className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed text-slate-700 dark:text-slate-200 transition-colors cursor-pointer"
           title="First Page"
         >
           <ChevronsLeft className="w-3.5 h-3.5" />
@@ -78,7 +78,7 @@ export default function Pagination({
         <button
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage === 1}
-          className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed text-slate-700 transition-colors cursor-pointer"
+          className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed text-slate-700 dark:text-slate-200 transition-colors cursor-pointer"
           title="Previous Page"
         >
           <ChevronLeft className="w-3.5 h-3.5" />
@@ -88,7 +88,7 @@ export default function Pagination({
         <div className="hidden lg:flex items-center gap-1">
           {getPageNumbers().map((page, idx) => (
             page === '...' ? (
-              <span key={`top-dots-${idx}`} className="px-1 text-slate-400 text-xs">...</span>
+              <span key={`top-dots-${idx}`} className="px-1 text-slate-400 dark:text-slate-500 text-xs">...</span>
             ) : (
               <button
                 key={`top-page-${page}`}
@@ -96,7 +96,7 @@ export default function Pagination({
                 className={`min-w-[30px] h-7.5 px-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                   currentPage === page
                     ? 'bg-emerald-600 text-white shadow-2xs'
-                    : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
+                    : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700'
                 }`}
               >
                 {page}
@@ -106,7 +106,7 @@ export default function Pagination({
         </div>
 
         {/* Page text indicator on smaller screens */}
-        <span className="lg:hidden text-xs font-bold text-slate-700 px-1.5">
+        <span className="lg:hidden text-xs font-bold text-slate-700 dark:text-slate-300 px-1.5">
           Page {currentPage} of {totalPages}
         </span>
 
@@ -114,7 +114,7 @@ export default function Pagination({
         <button
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage === totalPages}
-          className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed text-slate-700 transition-colors cursor-pointer"
+          className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed text-slate-700 dark:text-slate-200 transition-colors cursor-pointer"
           title="Next Page"
         >
           <ChevronRight className="w-3.5 h-3.5" />
@@ -122,7 +122,7 @@ export default function Pagination({
         <button
           onClick={() => onPageChange(totalPages)}
           disabled={currentPage === totalPages}
-          className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed text-slate-700 transition-colors cursor-pointer"
+          className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed text-slate-700 dark:text-slate-200 transition-colors cursor-pointer"
           title="Last Page"
         >
           <ChevronsRight className="w-3.5 h-3.5" />
@@ -137,7 +137,7 @@ export default function Pagination({
             placeholder="Go"
             value={jumpInput}
             onChange={(e) => setJumpInput(e.target.value)}
-            className="w-12 h-7.5 px-1.5 text-center text-xs border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-emerald-500 font-semibold"
+            className="w-12 h-7.5 px-1.5 text-center text-xs border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-emerald-500 font-semibold"
           />
         </form>
       </div>
@@ -146,12 +146,12 @@ export default function Pagination({
 
   // Bottom Pagination Layout
   return (
-    <div className="mt-8 pt-6 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+    <div className="mt-8 pt-6 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4">
       {/* Record info */}
-      <div className="text-sm text-slate-500 font-medium">
-        Showing <span className="font-semibold text-slate-800">{totalRecords > 0 ? startRecord.toLocaleString() : 0}</span> to{' '}
-        <span className="font-semibold text-slate-800">{endRecord.toLocaleString()}</span> of{' '}
-        <span className="font-semibold text-emerald-700 font-bold">{totalRecords.toLocaleString()}</span> posts
+      <div className="text-sm text-slate-500 dark:text-slate-400 font-medium">
+        Showing <span className="font-semibold text-slate-800 dark:text-slate-200">{totalRecords > 0 ? startRecord.toLocaleString() : 0}</span> to{' '}
+        <span className="font-semibold text-slate-800 dark:text-slate-200">{endRecord.toLocaleString()}</span> of{' '}
+        <span className="font-semibold text-emerald-700 dark:text-emerald-400 font-bold">{totalRecords.toLocaleString()}</span> posts
       </div>
 
       {/* Controls */}
@@ -160,7 +160,7 @@ export default function Pagination({
         <button
           onClick={() => onPageChange(1)}
           disabled={currentPage === 1}
-          className="p-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed text-slate-700 cursor-pointer"
+          className="p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed text-slate-700 dark:text-slate-200 cursor-pointer"
           title="First Page"
         >
           <ChevronsLeft className="w-4 h-4" />
@@ -168,7 +168,7 @@ export default function Pagination({
         <button
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage === 1}
-          className="p-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed text-slate-700 cursor-pointer"
+          className="p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed text-slate-700 dark:text-slate-200 cursor-pointer"
           title="Previous Page"
         >
           <ChevronLeft className="w-4 h-4" />
@@ -178,7 +178,7 @@ export default function Pagination({
         <div className="hidden md:flex items-center gap-1">
           {getPageNumbers().map((page, idx) => (
             page === '...' ? (
-              <span key={`page-dots-${idx}`} className="px-2 text-slate-400 text-sm">...</span>
+              <span key={`page-dots-${idx}`} className="px-2 text-slate-400 dark:text-slate-500 text-sm">...</span>
             ) : (
               <button
                 key={`page-${page}`}
@@ -186,7 +186,7 @@ export default function Pagination({
                 className={`min-w-[36px] h-9 px-3 rounded-lg text-sm font-semibold transition-colors cursor-pointer ${
                   currentPage === page
                     ? 'bg-emerald-600 text-white shadow-sm'
-                    : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
+                    : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700'
                 }`}
               >
                 {page}
@@ -196,7 +196,7 @@ export default function Pagination({
         </div>
 
         {/* Current page indicator on small screens */}
-        <span className="md:hidden text-sm font-semibold text-slate-700 px-2">
+        <span className="md:hidden text-sm font-semibold text-slate-700 dark:text-slate-300 px-2">
           Page {currentPage} of {totalPages}
         </span>
 
@@ -204,7 +204,7 @@ export default function Pagination({
         <button
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage === totalPages}
-          className="p-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed text-slate-700 cursor-pointer"
+          className="p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed text-slate-700 dark:text-slate-200 cursor-pointer"
           title="Next Page"
         >
           <ChevronRight className="w-4 h-4" />
@@ -212,7 +212,7 @@ export default function Pagination({
         <button
           onClick={() => onPageChange(totalPages)}
           disabled={currentPage === totalPages}
-          className="p-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed text-slate-700 cursor-pointer"
+          className="p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed text-slate-700 dark:text-slate-200 cursor-pointer"
           title="Last Page"
         >
           <ChevronsRight className="w-4 h-4" />
@@ -227,11 +227,11 @@ export default function Pagination({
             placeholder="Page"
             value={jumpInput}
             onChange={(e) => setJumpInput(e.target.value)}
-            className="w-16 h-9 px-2 text-center text-sm border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className="w-16 h-9 px-2 text-center text-sm border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
           />
           <button
             type="submit"
-            className="h-9 px-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold cursor-pointer"
+            className="h-9 px-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg text-xs font-semibold cursor-pointer"
           >
             Go
           </button>

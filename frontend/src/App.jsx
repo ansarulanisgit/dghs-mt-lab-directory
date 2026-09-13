@@ -4,6 +4,7 @@ import { getCurrentUser, logoutUser, syncUsersWithCloud } from './lib/authStore'
 import { getSystemConfig, syncConfigWithCloud } from './lib/configStore';
 import { calculateTimeRemaining } from './lib/countdownUtil';
 import { getInstituteTierRank } from './lib/instituteHierarchy';
+import { getStoredTheme, toggleTheme } from './lib/themeStore';
 import { exportFilteredStaffPDF } from './lib/pdfExport';
 import {
   getBackups, saveBackupSnapshot, getActiveBackupOverride, clearBackupOverride, syncBackupsWithCloud
@@ -18,7 +19,7 @@ import LoginScreen from './components/LoginScreen';
 import PermissionDeniedModal from './components/PermissionDeniedModal';
 import {
   Users, Clock, Settings, LogOut, AlertCircle, RefreshCw, Layers, User, FileDown, Timer,
-  AlertTriangle, Info, X, ShieldAlert, CheckCircle2, ChevronUp, Lock
+  AlertTriangle, Info, X, ShieldAlert, CheckCircle2, ChevronUp, Lock, Sun, Moon
 } from 'lucide-react';
 
 const PAGE_SIZE = 100; // 100 items per page
@@ -28,6 +29,16 @@ export default function App() {
   const [currentUser, setCurrentUser] = useState(getCurrentUser());
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [permissionDeniedFeature, setPermissionDeniedFeature] = useState(null);
+  const [theme, setTheme] = useState(getStoredTheme());
+
+  // Listen for theme changes across components/tabs
+  useEffect(() => {
+    const handleThemeChange = (e) => {
+      setTheme(e.detail || getStoredTheme());
+    };
+    window.addEventListener('dghs_theme_changed', handleThemeChange);
+    return () => window.removeEventListener('dghs_theme_changed', handleThemeChange);
+  }, []);
 
   // Check granular permissions for current user (Super Admin & Admin have full access)
   const isSuperAdmin = currentUser?.isSuperAdmin || currentUser?.role === 'Super Admin' || (currentUser?.email || '').toLowerCase() === 'ansarul.contact@gmail.com';
@@ -876,9 +887,9 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50">
+    <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 transition-colors duration-200">
       {/* Top Header */}
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
+      <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-30 shadow-xs transition-colors duration-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           {/* Logo & Portal Title */}
           <div className="flex items-center gap-3">
@@ -886,51 +897,66 @@ export default function App() {
               <Users className="w-5 h-5" />
             </div>
             <div>
-              <h1 className="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight">
+              <h1 className="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white tracking-tight">
                 {appConfig.appTitle || 'DGHS Employee Directory'}
               </h1>
-              <p className="text-xs text-slate-500 font-medium">
+              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
                 {appConfig.appSubtitle || 'Central Directory of Medical Technologists and Pharmacists'}
               </p>
             </div>
           </div>
 
           {/* Header Actions Card: Styled as a clean card on mobile with space above */}
-          <div className="mt-3 sm:mt-0 w-full sm:w-auto bg-slate-50/80 sm:bg-transparent border border-slate-200/80 sm:border-transparent rounded-2xl p-3 sm:p-0 shadow-2xs sm:shadow-none flex flex-col-reverse sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-2">
+          <div className="mt-3 sm:mt-0 w-full sm:w-auto bg-slate-50/80 dark:bg-slate-800/60 sm:bg-transparent sm:dark:bg-transparent border border-slate-200/80 dark:border-slate-700/60 sm:border-transparent sm:dark:border-transparent rounded-2xl p-3 sm:p-0 shadow-2xs sm:shadow-none flex flex-col-reverse sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-2">
             {/* On mobile: Row 2 (Next Update In - content width) | On desktop: First in row */}
-            <div className={`inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-full ${countdownText === 'Update Due' ? 'bg-amber-50 border-amber-200 text-amber-800' : 'bg-emerald-50 border-emerald-200 text-emerald-800'} border text-[11px] sm:text-xs font-semibold shadow-2xs w-fit self-start sm:self-auto shrink-0`}>
-              <Timer className={`w-3.5 h-3.5 ${countdownText === 'Update Due' ? 'text-amber-600 animate-spin' : 'text-emerald-600 animate-pulse'}`} />
+            <div className={`inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-full ${countdownText === 'Update Due' ? 'bg-amber-50 dark:bg-amber-950/60 border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-200' : 'bg-emerald-50 dark:bg-emerald-950/60 border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200'} border text-[11px] sm:text-xs font-semibold shadow-2xs w-fit self-start sm:self-auto shrink-0`}>
+              <Timer className={`w-3.5 h-3.5 ${countdownText === 'Update Due' ? 'text-amber-600 dark:text-amber-400 animate-spin' : 'text-emerald-600 dark:text-emerald-400 animate-pulse'}`} />
               {countdownText === 'Update Due' ? (
                 <span className="flex items-center gap-1.5">
                   <span>Auto-Update:</span>
-                  <strong className="font-bold text-amber-900">Update Due (Syncing...)</strong>
+                  <strong className="font-bold text-amber-900 dark:text-amber-200">Update Due (Syncing...)</strong>
                 </span>
               ) : (
-                <span>Next Update In: <strong className="font-mono font-bold text-emerald-900">{countdownText || 'Calculating...'}</strong></span>
+                <span>Next Update In: <strong className="font-mono font-bold text-emerald-900 dark:text-emerald-300">{countdownText || 'Calculating...'}</strong></span>
               )}
             </div>
 
-            {/* On mobile: Row 1 (Last Updated, User, Settings, Logout in single row) | On desktop: Follows Next Update In */}
+            {/* On mobile: Row 1 (Last Updated, User, Theme Toggle, Settings, Logout) | On desktop: Follows Next Update In */}
             <div className="flex items-center justify-between sm:justify-start gap-1.5 sm:gap-2 w-full sm:w-auto">
               {/* Last Updated Badge */}
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white sm:bg-slate-100 border border-slate-200 text-slate-700 text-[11px] sm:text-xs font-medium shadow-2xs sm:shadow-none shrink-0">
-                <Clock className="w-3.5 h-3.5 text-emerald-600" />
-                <span>Last Updated: <strong className="font-semibold text-slate-900">{formatTimestamp(metadata?.last_run_at)}</strong></span>
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white dark:bg-slate-800 sm:bg-slate-100 sm:dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-[11px] sm:text-xs font-medium shadow-2xs sm:shadow-none shrink-0">
+                <Clock className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                <span>Last Updated: <strong className="font-semibold text-slate-900 dark:text-white">{formatTimestamp(metadata?.last_run_at)}</strong></span>
               </div>
 
-              {/* User Actions Group (User pill, Settings, Logout) */}
+              {/* User Actions Group (User pill, Theme Switcher, Settings, Logout) */}
               <div className="flex items-center gap-1.5 shrink-0">
                 {/* Current User Pill (Showing only username) */}
-                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white sm:bg-slate-100 border border-slate-200 text-slate-800 text-[11px] sm:text-xs font-semibold shadow-2xs sm:shadow-none">
-                  <User className="w-3.5 h-3.5 text-emerald-600" />
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white dark:bg-slate-800 sm:bg-slate-100 sm:dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-[11px] sm:text-xs font-semibold shadow-2xs sm:shadow-none">
+                  <User className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                   <span>{currentUser.username || currentUser.name}</span>
                 </div>
+
+                {/* Theme Toggle Switcher Button (Placed before the Settings icon) */}
+                <button
+                  type="button"
+                  onClick={() => setTheme(toggleTheme())}
+                  className="p-1.5 sm:p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-emerald-700 dark:hover:text-amber-400 text-slate-600 dark:text-amber-400 transition-all cursor-pointer shadow-2xs flex items-center justify-center"
+                  title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+                  aria-label="Toggle theme"
+                >
+                  {theme === 'dark' ? (
+                    <Sun className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400 animate-in spin-in-90 duration-200" />
+                  ) : (
+                    <Moon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-600 animate-in spin-in-90 duration-200" />
+                  )}
+                </button>
 
                 {/* Password-Protected Settings Button (Admin & Super Admin only; hidden for standard users) */}
                 {isFullAdmin && (
                   <button
                     onClick={() => setSettingsOpen(true)}
-                    className="p-1.5 sm:p-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 hover:text-emerald-700 text-slate-600 transition-colors cursor-pointer shadow-2xs"
+                    className="p-1.5 sm:p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-emerald-700 dark:hover:text-emerald-400 text-slate-600 dark:text-slate-300 transition-colors cursor-pointer shadow-2xs"
                     title="System & Scraper Settings (Admin Only)"
                   >
                     <Settings className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
@@ -940,7 +966,7 @@ export default function App() {
                 {/* Logout Button */}
                 <button
                   onClick={handleLogout}
-                  className="p-1.5 sm:p-2 rounded-xl border border-slate-200 bg-white hover:bg-rose-50 hover:text-rose-700 hover:border-rose-200 text-slate-600 transition-colors cursor-pointer shadow-2xs"
+                  className="p-1.5 sm:p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-rose-50 dark:hover:bg-rose-950/40 hover:text-rose-700 dark:hover:text-rose-400 hover:border-rose-200 dark:hover:border-rose-800 text-slate-600 dark:text-slate-300 transition-colors cursor-pointer shadow-2xs"
                   title="Sign Out"
                 >
                   <LogOut className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
@@ -955,16 +981,16 @@ export default function App() {
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* Safety & Fallback Notification Banners */}
         {syncErrorNotice && (
-          <div className="bg-amber-50/90 border border-amber-300 p-4 rounded-2xl mb-6 shadow-xs flex items-start justify-between gap-3 animate-in fade-in">
+          <div className="bg-amber-50/90 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 p-4 rounded-2xl mb-6 shadow-xs flex items-start justify-between gap-3 animate-in fade-in">
             <div className="flex items-start gap-3">
-              <div className="p-2 bg-amber-100 rounded-xl text-amber-800 shrink-0">
+              <div className="p-2 bg-amber-100 dark:bg-amber-900/60 rounded-xl text-amber-800 dark:text-amber-200 shrink-0">
                 <AlertTriangle className="w-5 h-5" />
               </div>
               <div>
-                <h4 className="text-xs sm:text-sm font-extrabold text-amber-950">
+                <h4 className="text-xs sm:text-sm font-extrabold text-amber-950 dark:text-amber-100">
                   Update Issue Detected — Safe Fallback Active
                 </h4>
-                <p className="text-xs text-amber-800 mt-0.5 leading-relaxed">
+                <p className="text-xs text-amber-800 dark:text-amber-300 mt-0.5 leading-relaxed">
                   {syncErrorNotice}
                 </p>
                 <div className="flex flex-wrap items-center gap-2 mt-2.5">
@@ -977,7 +1003,7 @@ export default function App() {
                   {isFullAdmin && (
                     <button
                       onClick={() => setSettingsOpen(true)}
-                      className="px-3 py-1.5 bg-white hover:bg-amber-100/80 border border-amber-300 text-amber-900 rounded-lg text-xs font-semibold transition-all cursor-pointer shadow-2xs"
+                      className="px-3 py-1.5 bg-white dark:bg-slate-800 hover:bg-amber-100/80 dark:hover:bg-slate-700 border border-amber-300 dark:border-amber-800 text-amber-900 dark:text-amber-200 rounded-lg text-xs font-semibold transition-all cursor-pointer shadow-2xs"
                     >
                       View Stored Backups
                     </button>
@@ -987,7 +1013,7 @@ export default function App() {
             </div>
             <button
               onClick={() => setSyncErrorNotice(null)}
-              className="text-amber-500 hover:text-amber-800 p-1.5 rounded-lg hover:bg-amber-100 transition-colors cursor-pointer"
+              className="text-amber-500 hover:text-amber-800 dark:text-amber-400 dark:hover:text-amber-200 p-1.5 rounded-lg hover:bg-amber-100 dark:hover:bg-amber-900/50 transition-colors cursor-pointer"
               title="Dismiss Notice"
             >
               <X className="w-4 h-4" />
@@ -997,17 +1023,17 @@ export default function App() {
 
         {/* Restored Version Active Banner */}
         {activeRestoredBackup && (
-          <div className="bg-teal-50/90 border border-teal-300 p-4 rounded-2xl mb-6 shadow-xs flex items-start justify-between gap-3 animate-in fade-in">
+          <div className="bg-teal-50/90 dark:bg-teal-950/40 border border-teal-300 dark:border-teal-800 p-4 rounded-2xl mb-6 shadow-xs flex items-start justify-between gap-3 animate-in fade-in">
             <div className="flex items-start gap-3">
-              <div className="p-2 bg-teal-100 rounded-xl text-teal-800 shrink-0">
+              <div className="p-2 bg-teal-100 dark:bg-teal-900/60 rounded-xl text-teal-800 dark:text-teal-200 shrink-0">
                 <Info className="w-5 h-5" />
               </div>
               <div>
-                <h4 className="text-xs sm:text-sm font-extrabold text-teal-950">
+                <h4 className="text-xs sm:text-sm font-extrabold text-teal-950 dark:text-teal-100">
                   Historical Backup Version Active
                 </h4>
-                <p className="text-xs text-teal-800 mt-0.5 leading-relaxed">
-                  Displaying restored snapshot: <strong className="font-bold text-teal-900">{activeRestoredBackup.label}</strong> (Created: {new Date(activeRestoredBackup.createdAt).toLocaleString('en-GB')}, {activeRestoredBackup.recordCount?.toLocaleString()} records).
+                <p className="text-xs text-teal-800 dark:text-teal-300 mt-0.5 leading-relaxed">
+                  Displaying restored snapshot: <strong className="font-bold text-teal-900 dark:text-teal-200">{activeRestoredBackup.label}</strong> (Created: {new Date(activeRestoredBackup.createdAt).toLocaleString('en-GB')}, {activeRestoredBackup.recordCount?.toLocaleString()} records).
                 </p>
                 <div className="flex flex-wrap items-center gap-2 mt-2.5">
                   {isFullAdmin && (
@@ -1020,7 +1046,7 @@ export default function App() {
                       </button>
                       <button
                         onClick={() => setSettingsOpen(true)}
-                        className="px-3 py-1.5 bg-white hover:bg-teal-100/80 border border-teal-300 text-teal-900 rounded-lg text-xs font-semibold transition-all cursor-pointer shadow-2xs"
+                        className="px-3 py-1.5 bg-white dark:bg-slate-800 hover:bg-teal-100/80 dark:hover:bg-slate-700 border border-teal-300 dark:border-teal-800 text-teal-900 dark:text-teal-200 rounded-lg text-xs font-semibold transition-all cursor-pointer shadow-2xs"
                       >
                         Manage Stored Versions
                       </button>
@@ -1031,7 +1057,7 @@ export default function App() {
             </div>
             <button
               onClick={handleExitRestoredView}
-              className="text-teal-500 hover:text-teal-800 p-1.5 rounded-lg hover:bg-teal-100 transition-colors cursor-pointer"
+              className="text-teal-500 hover:text-teal-800 dark:text-teal-400 dark:hover:text-teal-200 p-1.5 rounded-lg hover:bg-teal-100 dark:hover:bg-teal-900/50 transition-colors cursor-pointer"
               title="Exit Restored View"
             >
               <X className="w-4 h-4" />
@@ -1080,15 +1106,15 @@ export default function App() {
         {/* Action Bar: Showing Count on Left & Green PDF Export Button on Right (Always in same row on mobile) */}
         <div className="flex flex-row items-center justify-between gap-2.5 mb-5 px-1">
           {/* Results Summary Count */}
-          <div className="text-xs sm:text-sm font-semibold text-slate-600 truncate min-w-0">
+          <div className="text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-400 truncate min-w-0">
             {isLoading ? (
               <span>Loading directory...</span>
             ) : totalCount === 0 ? (
               <span>No records found</span>
             ) : (
               <span>
-                Showing <strong className="text-slate-900">{startItem.toLocaleString()} to {endItem.toLocaleString()}</strong> of{' '}
-                <strong className="text-emerald-700 font-extrabold">{totalCount.toLocaleString()}</strong> posts
+                Showing <strong className="text-slate-900 dark:text-white">{startItem.toLocaleString()} to {endItem.toLocaleString()}</strong> of{' '}
+                <strong className="text-emerald-700 dark:text-emerald-400 font-extrabold">{totalCount.toLocaleString()}</strong> posts
               </span>
             )}
           </div>
@@ -1099,7 +1125,7 @@ export default function App() {
             disabled={isLoading || totalCount === 0 || isExportingPDF || !canExportPdf}
             className={`inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 text-xs font-bold rounded-xl transition-all shrink-0 select-none ${
               !canExportPdf
-                ? 'bg-slate-200/90 border border-slate-300 text-slate-400 opacity-60 cursor-not-allowed shadow-none'
+                ? 'bg-slate-200/90 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-400 dark:text-slate-500 opacity-60 cursor-not-allowed shadow-none'
                 : 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-md shadow-emerald-600/20 hover:shadow-lg cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed'
             }`}
             title={
@@ -1109,7 +1135,7 @@ export default function App() {
             }
           >
             {!canExportPdf ? (
-              <Lock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-400" />
+              <Lock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-400 dark:text-slate-500" />
             ) : (
               <FileDown className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             )}
@@ -1119,14 +1145,14 @@ export default function App() {
 
         {/* Error Alert */}
         {error && (
-          <div className="mb-6 p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-sm flex items-center justify-between gap-3">
+          <div className="mb-6 p-4 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-200 text-sm flex items-center justify-between gap-3">
             <div className="flex items-center gap-2">
-              <AlertCircle className="w-5 h-5 shrink-0 text-rose-600" />
+              <AlertCircle className="w-5 h-5 shrink-0 text-rose-600 dark:text-rose-400" />
               <span>{error}</span>
             </div>
             <button
               onClick={fetchStaff}
-              className="px-3 py-1 bg-rose-100 hover:bg-rose-200 text-rose-900 font-semibold rounded-lg text-xs flex items-center gap-1 cursor-pointer"
+              className="px-3 py-1 bg-rose-100 dark:bg-rose-900/60 hover:bg-rose-200 dark:hover:bg-rose-800 text-rose-900 dark:text-rose-100 font-semibold rounded-lg text-xs flex items-center gap-1 cursor-pointer"
             >
               <RefreshCw className="w-3.5 h-3.5" />
               Retry
@@ -1138,30 +1164,30 @@ export default function App() {
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {Array.from({ length: 9 }).map((_, i) => (
-              <div key={i} className="bg-white rounded-xl border border-slate-200 p-5 animate-pulse space-y-4">
+              <div key={i} className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 animate-pulse space-y-4">
                 <div className="flex justify-between items-center">
-                  <div className="h-5 w-20 bg-slate-200 rounded" />
-                  <div className="h-5 w-16 bg-slate-200 rounded-full" />
+                  <div className="h-5 w-20 bg-slate-200 dark:bg-slate-800 rounded" />
+                  <div className="h-5 w-16 bg-slate-200 dark:bg-slate-800 rounded-full" />
                 </div>
                 <div className="space-y-2">
-                  <div className="h-5 w-3/4 bg-slate-200 rounded" />
-                  <div className="h-4 w-1/2 bg-slate-100 rounded" />
+                  <div className="h-5 w-3/4 bg-slate-200 dark:bg-slate-800 rounded" />
+                  <div className="h-4 w-1/2 bg-slate-100 dark:bg-slate-800/60 rounded" />
                 </div>
-                <div className="space-y-2 pt-2 border-t border-slate-100">
-                  <div className="h-4 w-full bg-slate-100 rounded" />
-                  <div className="h-4 w-2/3 bg-slate-100 rounded" />
+                <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                  <div className="h-4 w-full bg-slate-100 dark:bg-slate-800/60 rounded" />
+                  <div className="h-4 w-2/3 bg-slate-100 dark:bg-slate-800/60 rounded" />
                 </div>
               </div>
             ))}
           </div>
         ) : staffList.length === 0 ? (
           /* Empty State */
-          <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center max-w-md mx-auto my-12 shadow-xs">
-            <div className="w-12 h-12 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-4">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-12 text-center max-w-md mx-auto my-12 shadow-xs">
+            <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 flex items-center justify-center mx-auto mb-4">
               <Layers className="w-6 h-6" />
             </div>
-            <h3 className="text-base font-bold text-slate-800">No matching posts found</h3>
-            <p className="text-xs text-slate-500 mt-1 mb-5">
+            <h3 className="text-base font-bold text-slate-800 dark:text-white">No matching posts found</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 mb-5">
               No matching records found for the selected filter criteria.
             </p>
             <button
@@ -1229,8 +1255,31 @@ export default function App() {
       )}
 
       {/* Footer */}
-      <footer className="mt-auto border-t border-slate-200 bg-white py-4 text-center text-xs text-slate-500 font-medium px-4">
-        {appConfig.footerText || 'DGHS Employee Directory - Developed By Ansarul Anis'}
+      <footer className="mt-auto border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 py-4 text-center text-xs text-slate-500 dark:text-slate-400 font-medium px-4">
+        {(() => {
+          const content = appConfig.footerText || 'DGHS Employee Directory - Developed By Ansarul Anis';
+          const target = 'Ansarul Anis';
+          if (content.toLowerCase().includes(target.toLowerCase())) {
+            const regex = new RegExp(`(${target})`, 'i');
+            const parts = content.split(regex);
+            return parts.map((part, i) =>
+              part.toLowerCase() === target.toLowerCase() ? (
+                <a
+                  key={i}
+                  href="https://www.facebook.com/ansarulanis"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 font-bold hover:underline transition-colors cursor-pointer inline-flex items-center"
+                >
+                  {part}
+                </a>
+              ) : (
+                <span key={i}>{part}</span>
+              )
+            );
+          }
+          return content;
+        })()}
       </footer>
 
       {/* Floating Circular Back to Top Button (Transparent Frosted Green Glassmorphism with Theme Gradient) */}

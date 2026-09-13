@@ -15,7 +15,7 @@ function highlightMatch(text, query) {
   return (
     <>
       {before}
-      <span className="font-extrabold text-emerald-700 bg-emerald-100/80 px-0.5 rounded">{match}</span>
+      <span className="font-extrabold text-emerald-700 dark:text-emerald-300 bg-emerald-100/80 dark:bg-emerald-950/80 px-0.5 rounded">{match}</span>
       {after}
     </>
   );
@@ -89,7 +89,7 @@ export default function SearchAutocomplete({
           primaryText: name,
           secondaryText: `${designation} • ${institute || 'DGHS Facility'}`,
           searchValue: name,
-          badgeColor: 'bg-emerald-100 text-emerald-800 border-emerald-200'
+          badgeColor: 'bg-emerald-100 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800'
         });
       }
 
@@ -103,7 +103,7 @@ export default function SearchAutocomplete({
           primaryText: institute,
           secondaryText: [upazila, district].filter(Boolean).join(', ') || 'Bangladesh',
           searchValue: institute,
-          badgeColor: 'bg-blue-100 text-blue-800 border-blue-200'
+          badgeColor: 'bg-blue-100 dark:bg-blue-950/70 text-blue-800 dark:text-blue-300 border-blue-200 dark:border-blue-800'
         });
       }
 
@@ -117,7 +117,7 @@ export default function SearchAutocomplete({
           primaryText: `HRIS: ${hris}`,
           secondaryText: `${isFilled ? name : 'Post #' + postId} • ${designation}`,
           searchValue: hris,
-          badgeColor: 'bg-purple-100 text-purple-800 border-purple-200'
+          badgeColor: 'bg-purple-100 dark:bg-purple-950/70 text-purple-800 dark:text-purple-300 border-purple-200 dark:border-purple-800'
         });
       } else if (postId && postId.includes(q) && !seenHris.has(`post-${postId}`)) {
         seenHris.add(`post-${postId}`);
@@ -128,7 +128,7 @@ export default function SearchAutocomplete({
           primaryText: `Post ID: #${postId}`,
           secondaryText: `${designation} • ${institute}`,
           searchValue: postId,
-          badgeColor: 'bg-purple-100 text-purple-800 border-purple-200'
+          badgeColor: 'bg-purple-100 dark:bg-purple-950/70 text-purple-800 dark:text-purple-300 border-purple-200 dark:border-purple-800'
         });
       }
 
@@ -142,7 +142,7 @@ export default function SearchAutocomplete({
           primaryText: designation,
           secondaryText: `${item.designation_group} • ${item.major_discipline || 'General'}`,
           searchValue: designation,
-          badgeColor: 'bg-amber-100 text-amber-900 border-amber-200'
+          badgeColor: 'bg-amber-100 dark:bg-amber-950/70 text-amber-900 dark:text-amber-300 border-amber-200 dark:border-amber-800'
         });
       }
 
@@ -157,7 +157,7 @@ export default function SearchAutocomplete({
           primaryText: `${upazila}, ${district}`,
           secondaryText: `${item.division || 'Bangladesh'} Division`,
           searchValue: upazila || district,
-          badgeColor: 'bg-slate-100 text-slate-800 border-slate-200'
+          badgeColor: 'bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border-slate-200 dark:border-slate-700'
         });
       }
 
@@ -196,7 +196,8 @@ export default function SearchAutocomplete({
 
   const handleKeyDown = (e) => {
     if (!isOpen || suggestions.length === 0) {
-      if (e.key === 'ArrowDown') {
+      if (e.key === 'ArrowDown' && suggestions.length > 0) {
+        e.preventDefault();
         setIsOpen(true);
       }
       return;
@@ -226,7 +227,7 @@ export default function SearchAutocomplete({
       {/* Search Input Box */}
       <div className="relative">
         <Search className={`w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none transition-colors ${
-          isExactSelected ? 'text-emerald-600' : 'text-slate-400'
+          isExactSelected ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400 dark:text-slate-500'
         }`} />
         <input
           ref={inputRef}
@@ -244,10 +245,10 @@ export default function SearchAutocomplete({
             }
           }}
           onKeyDown={handleKeyDown}
-          className={`w-full pl-10 pr-24 py-2.5 bg-slate-50 border rounded-xl text-xs sm:text-sm focus:outline-none transition-all placeholder:text-slate-400 ${
+          className={`w-full pl-10 pr-24 py-2.5 bg-slate-50 dark:bg-slate-800 border rounded-xl text-xs sm:text-sm text-slate-900 dark:text-white focus:outline-none transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500 ${
             isExactSelected
-              ? 'border-emerald-500 bg-emerald-50/40 text-emerald-950 ring-2 ring-emerald-500/20 font-semibold'
-              : 'border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:bg-white'
+              ? 'border-emerald-500 dark:border-emerald-500 bg-emerald-50/40 dark:bg-emerald-950/60 text-emerald-950 dark:text-emerald-200 ring-2 ring-emerald-500/20 font-semibold'
+              : 'border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-emerald-500 focus:bg-white dark:focus:bg-slate-800'
           }`}
           autoComplete="off"
         />
@@ -267,7 +268,7 @@ export default function SearchAutocomplete({
                 setIsOpen(false);
                 inputRef.current?.focus();
               }}
-              className="p-1 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-200/60 transition-colors cursor-pointer"
+              className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-full hover:bg-slate-200/60 dark:hover:bg-slate-700 transition-colors cursor-pointer"
               title="Clear search"
             >
               <X className="w-3.5 h-3.5" />
@@ -278,13 +279,13 @@ export default function SearchAutocomplete({
 
       {/* Autocomplete Dropdown Menu */}
       {isOpen && suggestions.length > 0 && (
-        <div className="absolute left-0 right-0 top-full mt-1.5 bg-white rounded-2xl shadow-xl border border-slate-200/90 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
-          <div className="px-3.5 py-2 bg-slate-50/80 border-b border-slate-100 flex items-center justify-between text-[11px] font-semibold text-slate-500">
+        <div className="absolute left-0 right-0 top-full mt-1.5 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200/90 dark:border-slate-800 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
+          <div className="px-3.5 py-2 bg-slate-50/80 dark:bg-slate-800/80 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between text-[11px] font-semibold text-slate-500 dark:text-slate-400">
             <span>Suggested Matches ({suggestions.length})</span>
-            <span className="text-[10px] text-slate-400 hidden sm:inline">Use ↑ ↓ arrows to navigate</span>
+            <span className="text-[10px] text-slate-400 dark:text-slate-500 hidden sm:inline">Use ↑ ↓ arrows to navigate</span>
           </div>
 
-          <div className="max-h-80 overflow-y-auto divide-y divide-slate-100">
+          <div className="max-h-80 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800">
             {suggestions.map((item, index) => {
               const Icon = item.icon;
               const isSelected = highlightedIndex === index;
@@ -295,7 +296,7 @@ export default function SearchAutocomplete({
                   onClick={() => handleSelect(item)}
                   onMouseEnter={() => setHighlightedIndex(index)}
                   className={`px-3.5 py-2.5 flex items-center justify-between gap-3 cursor-pointer transition-colors ${
-                    isSelected ? 'bg-emerald-50/90' : 'hover:bg-slate-50'
+                    isSelected ? 'bg-emerald-50/90 dark:bg-emerald-950/60' : 'hover:bg-slate-50 dark:hover:bg-slate-800/80'
                   }`}
                 >
                   <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -304,10 +305,10 @@ export default function SearchAutocomplete({
                     </div>
 
                     <div className="min-w-0 flex-1">
-                      <div className="text-xs sm:text-sm font-bold text-slate-900 line-clamp-1">
+                      <div className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white line-clamp-1">
                         {highlightMatch(item.primaryText, value)}
                       </div>
-                      <div className="text-[11px] text-slate-500 font-medium line-clamp-1 mt-0.5">
+                      <div className="text-[11px] text-slate-500 dark:text-slate-400 font-medium line-clamp-1 mt-0.5">
                         {item.secondaryText}
                       </div>
                     </div>
@@ -317,7 +318,7 @@ export default function SearchAutocomplete({
                     <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${item.badgeColor}`}>
                       {item.category}
                     </span>
-                    <ArrowRight className={`w-3.5 h-3.5 transition-transform ${isSelected ? 'text-emerald-700 translate-x-0.5' : 'text-slate-300'}`} />
+                    <ArrowRight className={`w-3.5 h-3.5 transition-transform ${isSelected ? 'text-emerald-700 dark:text-emerald-400 translate-x-0.5' : 'text-slate-300 dark:text-slate-600'}`} />
                   </div>
                 </div>
               );

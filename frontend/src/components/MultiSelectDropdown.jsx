@@ -60,7 +60,7 @@ export default function MultiSelectDropdown({
 
   return (
     <div className="relative" ref={dropdownRef}>
-      <label className="block text-[10px] font-extrabold uppercase tracking-wider text-slate-500 mb-1">
+      <label className="block text-[10px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">
         {title}
       </label>
 
@@ -68,10 +68,10 @@ export default function MultiSelectDropdown({
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className={`w-full px-3 py-2 bg-slate-50 border rounded-xl text-xs font-medium flex items-center justify-between gap-2 transition-all cursor-pointer select-none text-left ${
+        className={`w-full px-3 py-2 border rounded-xl text-xs font-medium flex items-center justify-between gap-2 transition-all cursor-pointer select-none text-left ${
           selectedValues.length > 0
-            ? 'border-emerald-500 bg-emerald-50/40 text-emerald-950 ring-1 ring-emerald-500/20'
-            : 'border-slate-200 text-slate-700 hover:bg-slate-100/70 focus:ring-2 focus:ring-emerald-500'
+            ? 'border-emerald-500 dark:border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/60 text-emerald-950 dark:text-emerald-200 ring-1 ring-emerald-500/20'
+            : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100/70 dark:hover:bg-slate-700/80 focus:ring-2 focus:ring-emerald-500'
         }`}
       >
         <span className="truncate flex-1 font-semibold">
@@ -82,37 +82,37 @@ export default function MultiSelectDropdown({
           {selectedValues.length > 0 && (
             <span
               onClick={handleClearAll}
-              className="p-0.5 rounded-md hover:bg-emerald-200/60 text-emerald-800 transition-colors"
+              className="p-0.5 rounded-md hover:bg-emerald-200/60 dark:hover:bg-emerald-800/60 text-emerald-800 dark:text-emerald-300 transition-colors"
               title="Clear selection"
             >
               <X className="w-3 h-3" />
             </span>
           )}
-          <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-150 ${isOpen ? 'rotate-180 text-emerald-600' : ''}`} />
+          <ChevronDown className={`w-3.5 h-3.5 text-slate-400 dark:text-slate-400 transition-transform duration-150 ${isOpen ? 'rotate-180 text-emerald-600 dark:text-emerald-400' : ''}`} />
         </div>
       </button>
 
       {/* Dropdown Menu Popup */}
       {isOpen && (
-        <div className="absolute z-50 mt-1.5 w-full min-w-[240px] max-w-[340px] bg-white border border-slate-200 rounded-2xl shadow-xl p-2 space-y-1.5 animate-in fade-in zoom-in-95 duration-150">
+        <div className="absolute z-50 mt-1.5 w-full min-w-[240px] max-w-[340px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl p-2 space-y-1.5 animate-in fade-in zoom-in-95 duration-150">
           {/* Header Action Bar */}
-          <div className="flex items-center justify-between px-2 py-1 border-b border-slate-100 text-[11px]">
-            <span className="font-bold text-slate-500">
+          <div className="flex items-center justify-between px-2 py-1 border-b border-slate-100 dark:border-slate-800 text-[11px]">
+            <span className="font-bold text-slate-500 dark:text-slate-400">
               {options.length} {options.length === 1 ? 'Option' : 'Options'}
             </span>
             <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={handleSelectAll}
-                className="text-emerald-700 hover:text-emerald-900 font-bold hover:underline cursor-pointer"
+                className="text-emerald-700 dark:text-emerald-400 hover:text-emerald-900 dark:hover:text-emerald-300 font-bold hover:underline cursor-pointer"
               >
                 Select All
               </button>
-              <span className="text-slate-300">|</span>
+              <span className="text-slate-300 dark:text-slate-700">|</span>
               <button
                 type="button"
                 onClick={handleClearAll}
-                className="text-slate-500 hover:text-slate-800 font-semibold hover:underline cursor-pointer"
+                className="text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white font-semibold hover:underline cursor-pointer"
               >
                 Clear
               </button>
@@ -122,13 +122,13 @@ export default function MultiSelectDropdown({
           {/* Search Box if Searchable */}
           {searchable && options.length > 6 && (
             <div className="relative px-1 pt-1">
-              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <Search className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
                 placeholder={`Filter ${title.toLowerCase()}...`}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-8 pr-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                className="w-full pl-8 pr-2.5 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                 onClick={(e) => e.stopPropagation()}
               />
             </div>
@@ -137,7 +137,7 @@ export default function MultiSelectDropdown({
           {/* Option List */}
           <div className="max-h-56 overflow-y-auto space-y-0.5 pr-0.5 custom-scrollbar">
             {filteredOptions.length === 0 ? (
-              <div className="px-3 py-3 text-center text-xs text-slate-400 font-medium">
+              <div className="px-3 py-3 text-center text-xs text-slate-400 dark:text-slate-500 font-medium">
                 No matching options
               </div>
             ) : (
@@ -149,15 +149,15 @@ export default function MultiSelectDropdown({
                     onClick={() => toggleOption(opt.value)}
                     className={`px-2.5 py-1.5 rounded-xl text-xs flex items-center justify-between gap-2 transition-colors cursor-pointer select-none ${
                       isSelected
-                        ? 'bg-emerald-50 text-emerald-950 font-bold'
-                        : 'hover:bg-slate-50 text-slate-700'
+                        ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-950 dark:text-emerald-200 font-bold'
+                        : 'hover:bg-slate-50 dark:hover:bg-slate-800/80 text-slate-700 dark:text-slate-200'
                     }`}
                   >
                     <div className="flex items-center gap-2 min-w-0 flex-1">
                       <div className={`w-4 h-4 rounded-md border flex items-center justify-center shrink-0 transition-colors ${
                         isSelected
                           ? 'bg-emerald-600 border-emerald-600 text-white'
-                          : 'border-slate-300 bg-white'
+                          : 'border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800'
                       }`}>
                         {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
                       </div>
@@ -166,7 +166,7 @@ export default function MultiSelectDropdown({
 
                     {opt.count !== undefined && (
                       <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold shrink-0 ${
-                        isSelected ? 'bg-emerald-200/80 text-emerald-900' : 'bg-slate-100 text-slate-500'
+                        isSelected ? 'bg-emerald-200/80 dark:bg-emerald-900/80 text-emerald-900 dark:text-emerald-200' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
                       }`}>
                         {opt.count.toLocaleString()}
                       </span>
