@@ -76,7 +76,7 @@ export async function runScraper(options = {}) {
   const page = await context.newPage();
 
   try {
-    await page.goto('https://hrm.dghs.gov.bd/sanctioned-posts/33389/edit', { waitUntil: 'networkidle' });
+    await page.goto('https://hrm.dghs.gov.bd/sanctioned-posts/33389/edit', { waitUntil: 'domcontentloaded', timeout: 60000 });
 
     const reportColumns = [
       'sanctioned_posts.id',

@@ -1,8 +1,8 @@
 {
-  "last_run_at": "2026-09-13T12:11:30.959Z",
+  "last_run_at": "2026-10-05T13:22:22.663Z",
   "record_count": 10027,
-  "filled_count": 6515,
-  "vacant_count": 3258,
-  "abolished_count": 254,
+  "filled_count": 6509,
+  "vacant_count": 3263,
+  "abolished_count": 255,
   "schedule_interval_days": 7
 }

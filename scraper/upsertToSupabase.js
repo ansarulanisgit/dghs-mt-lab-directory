@@ -223,8 +223,8 @@ export async function upsertStaffRecords(records) {
     updated_at: new Date().toISOString()
   }));
 
-  // Batch in chunks of 100 for reliable network operations
-  const chunkSize = 100;
+  // Batch in chunks of 500 for fast and reliable network operations
+  const chunkSize = 500;
   let totalUpserted = 0;
 
   for (let i = 0; i < dbRecords.length; i += chunkSize) {

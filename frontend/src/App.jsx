@@ -75,14 +75,17 @@ export default function App() {
   };
 
   // Directory Data State
+  const [liveStaffData, setLiveStaffData] = useState(MOCK_STAFF);
   const [staffList, setStaffList] = useState([]);
   const [allFilteredStaff, setAllFilteredStaff] = useState([]); // For full PDF export
   const [totalCount, setTotalCount] = useState(0);
   const [metadata, setMetadata] = useState(MOCK_METADATA);
   const [isLoading, setIsLoading] = useState(true);
   const [isExportingPDF, setIsExportingPDF] = useState(false);
+  const [isAutoSyncing, setIsAutoSyncing] = useState(false);
   const [error, setError] = useState(null);
   const isInitialMount = useRef(true);
+  const syncInProgressRef = useRef(false);
 
   // Resilience & Backup States
   const [activeRestoredBackup, setActiveRestoredBackup] = useState(getActiveBackupOverride());
@@ -116,8 +119,8 @@ export default function App() {
   const activeDataset = useMemo(() => {
     return (activeRestoredBackup && Array.isArray(activeRestoredBackup.data))
       ? activeRestoredBackup.data
-      : MOCK_STAFF;
-  }, [activeRestoredBackup]);
+      : liveStaffData;
+  }, [activeRestoredBackup, liveStaffData]);
 
   // Fast pre-indexed dataset with normalized search fields and precomputed ranks/IDs
   const indexedDataset = useMemo(() => {
@@ -477,15 +480,21 @@ export default function App() {
     return count;
   }, [debouncedSearch, selectedDesignationGroups, selectedDisciplines, selectedDesignations, selectedStatus, selectedDivision, selectedDistrict, selectedUpazila, selectedGender, hidePastPRL]);
 
-  // Fetch metadata on mount
+  // Fetch metadata on mount (resolving the freshest timestamp across local bundle, localStorage, and Supabase)
   const fetchMetadata = useCallback(async () => {
-    if (!isSupabaseConfigured) {
-      const savedTime = localStorage.getItem('dghs_last_sync_time') || new Date().toISOString();
-      setMetadata({
-        last_run_at: savedTime,
-        record_count: MOCK_STAFF.length,
-        failed_count: 0
-      });
+    const savedTime = localStorage.getItem('dghs_last_sync_time');
+    const localBundleTime = MOCK_METADATA?.last_run_at;
+    let bestTime = localBundleTime || new Date().toISOString();
+    if (savedTime && new Date(savedTime).getTime() > new Date(bestTime).getTime()) {
+      bestTime = savedTime;
+    }
+
+    if (!isSupabaseConfigured || !supabase) {
+      setMetadata(prev => ({
+        ...prev,
+        last_run_at: bestTime,
+        record_count: liveStaffData.length
+      }));
       return;
     }
     try {
@@ -495,12 +504,22 @@ export default function App() {
         .eq('id', 1)
         .single();
       if (data && !error) {
-        setMetadata(data);
+        const remoteTime = data.last_run_at ? new Date(data.last_run_at).getTime() : 0;
+        const localTime = new Date(bestTime).getTime();
+        if (localTime > remoteTime) {
+          setMetadata({
+            ...data,
+            ...MOCK_METADATA,
+            last_run_at: bestTime
+          });
+        } else {
+          setMetadata(data);
+        }
       }
     } catch (e) {
       console.warn('Metadata fetch error:', e);
     }
-  }, []);
+  }, [liveStaffData.length]);
 
   useEffect(() => {
     fetchMetadata();
@@ -701,22 +720,14 @@ export default function App() {
   useEffect(() => {
     if (!isSupabaseConfigured || !supabase) return;
 
-    supabase
-      .from('scrape_metadata')
-      .select('*')
-      .eq('id', 1)
-      .single()
-      .then(({ data, error }) => {
-        if (!error && data) {
-          setMetadata(data);
-        }
-      });
-
     const channel = supabase
       .channel('scrape_metadata_live')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'scrape_metadata' }, (payload) => {
         if (payload.new) {
           setMetadata(payload.new);
+          if (payload.new.last_run_at) {
+            localStorage.setItem('dghs_last_sync_time', payload.new.last_run_at);
+          }
           fetchStaff();
         }
       })
@@ -733,6 +744,25 @@ export default function App() {
     syncBackupsWithCloud();
     syncConfigWithCloud();
     syncPdfColumnsWithCloud();
+
+    // Also check if local server has fresher scraped data on startup
+    fetch('/api/latest-data')
+      .then(r => (r.ok ? r.json() : null))
+      .then(res => {
+        if (res?.ok) {
+          if (Array.isArray(res.records) && res.records.length > 0) {
+            setLiveStaffData(res.records);
+          }
+          if (res.metadata?.last_run_at) {
+            setMetadata(prev => {
+              const prevTime = prev?.last_run_at ? new Date(prev.last_run_at).getTime() : 0;
+              const newTime = new Date(res.metadata.last_run_at).getTime();
+              return newTime >= prevTime ? { ...prev, ...res.metadata } : prev;
+            });
+          }
+        }
+      })
+      .catch(() => {});
 
     // Multi-Table Realtime Subscriptions for seamless cross-device synchronization
     if (isSupabaseConfigured && supabase) {
@@ -776,18 +806,29 @@ export default function App() {
     setCurrentUser(null);
   };
 
-  // Safe Force Update with Automatic Backup Snapshot & Universal Synchronization
-  const handleForceUpdate = async () => {
+  // Safe Automated & Manual Update with Live Scraper Execution, Backup Snapshot & Universal Synchronization
+  const handleForceUpdate = useCallback(async () => {
+    if (syncInProgressRef.current) return;
+    syncInProgressRef.current = true;
+    setIsAutoSyncing(true);
+
     try {
       // 1. Automatically backup current dataset before updating (auto mode: automatically trims oldest if 5 limit reached)
       saveBackupSnapshot(activeDataset, `Pre-Update Backup (${new Date().toLocaleDateString('en-GB')} ${new Date().toLocaleTimeString('en-GB')})`, true);
 
-      // 2. Perform sync timestamp update
+      // 2. Immediately advance sync timestamp so countdown never hangs on "Update Due"
       const newTimestamp = new Date().toISOString();
+      localStorage.setItem('dghs_last_sync_time', newTimestamp);
       const currentConfig = getSystemConfig();
-      const filled = activeDataset.filter(s => s.status === 'Filled').length;
-      const vacant = activeDataset.filter(s => s.status === 'Vacant').length;
-      const abolished = activeDataset.filter(s => s.status === 'Abolished').length;
+      let filled = 0;
+      let vacant = 0;
+      let abolished = 0;
+      for (let i = 0; i < activeDataset.length; i++) {
+        const st = activeDataset[i].status;
+        if (st === 'Filled') filled++;
+        else if (st === 'Vacant') vacant++;
+        else if (st === 'Abolished') abolished++;
+      }
 
       const newMeta = {
         id: 1,
@@ -804,21 +845,44 @@ export default function App() {
 
       setMetadata(newMeta);
 
-      // 3. If Supabase configured, update central cloud metadata
+      // 3. Update central cloud metadata in Supabase
       if (isSupabaseConfigured && supabase) {
         await supabase
           .from('scrape_metadata')
           .upsert(newMeta, { onConflict: 'id' });
       }
 
-      // 4. Refresh directory
+      // 4. Trigger live DGHS scraper endpoint if running on local/server environment
+      try {
+        const res = await fetch('/api/trigger-scrape', { method: 'POST' });
+        if (res.ok) {
+          const payload = await res.json();
+          if (payload?.ok) {
+            if (Array.isArray(payload.records) && payload.records.length > 0) {
+              setLiveStaffData(payload.records);
+            }
+            if (payload.metadata?.last_run_at) {
+              localStorage.setItem('dghs_last_sync_time', payload.metadata.last_run_at);
+              setMetadata(prev => ({ ...prev, ...payload.metadata }));
+            }
+            syncBackupsWithCloud();
+          }
+        }
+      } catch {
+        // Fallback when running on static hosting without local Node scraper middleware
+      }
+
+      // 5. Refresh directory view
       await fetchStaff();
       setSyncErrorNotice(null);
     } catch (err) {
       console.error('Force update failed:', err);
       setSyncErrorNotice('Update error: ' + err.message + '. Preserved the most recent working dataset.');
+    } finally {
+      setIsAutoSyncing(false);
+      syncInProgressRef.current = false;
     }
-  };
+  }, [activeDataset, fetchStaff]);
 
   // Create Manual Backup from SettingsModal
   const handleManualSnapshot = () => {
@@ -909,7 +973,11 @@ export default function App() {
           <div className="mt-3 sm:mt-0 w-full sm:w-auto bg-slate-50/80 dark:bg-slate-800/60 sm:bg-transparent sm:dark:bg-transparent border border-slate-200/80 dark:border-slate-700/60 sm:border-transparent sm:dark:border-transparent rounded-2xl p-3 sm:p-0 shadow-2xs sm:shadow-none flex flex-col-reverse sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-2">
             {/* On mobile: Row 2 (Next Update In) + Theme Switcher | On desktop: First in row */}
             <div className="flex items-center gap-2 w-full sm:w-auto">
-              <CountdownBadge lastRunAt={metadata?.last_run_at} />
+              <CountdownBadge
+                lastRunAt={metadata?.last_run_at}
+                onUpdateDue={handleForceUpdate}
+                isSyncing={isAutoSyncing}
+              />
 
               {/* Mobile Theme Toggle Button (Visible only on mobile: sm:hidden) */}
               <button

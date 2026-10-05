@@ -1,11 +1,12 @@
-import React, { useState, useEffect, memo } from 'react';
+import React, { useState, useEffect, useRef, memo } from 'react';
 import { Timer } from 'lucide-react';
 import { calculateTimeRemaining } from '../lib/countdownUtil';
 import { getSystemConfig } from '../lib/configStore';
 import { MOCK_METADATA } from '../lib/supabaseClient';
 
-function CountdownBadge({ lastRunAt }) {
+function CountdownBadge({ lastRunAt, onUpdateDue, isSyncing = false }) {
   const [countdownText, setCountdownText] = useState('');
+  const lastTriggeredRef = useRef(0);
 
   useEffect(() => {
     function tick() {
@@ -15,6 +16,14 @@ function CountdownBadge({ lastRunAt }) {
         lastRunAt || MOCK_METADATA.last_run_at
       );
       setCountdownText(text);
+
+      if (text === 'Update Due' && onUpdateDue && !isSyncing) {
+        const now = Date.now();
+        if (now - lastTriggeredRef.current > 30000) {
+          lastTriggeredRef.current = now;
+          onUpdateDue();
+        }
+      }
     }
 
     tick();
@@ -27,9 +36,9 @@ function CountdownBadge({ lastRunAt }) {
       clearInterval(interval);
       window.removeEventListener('dghs_config_updated', handleConfigUpdate);
     };
-  }, [lastRunAt]);
+  }, [lastRunAt, onUpdateDue, isSyncing]);
 
-  const isDue = countdownText === 'Update Due';
+  const isDue = isSyncing || countdownText === 'Update Due';
 
   return (
     <div
@@ -50,7 +59,7 @@ function CountdownBadge({ lastRunAt }) {
         <span className="flex items-center gap-1.5">
           <span>Auto-Update:</span>
           <strong className="font-bold text-amber-900 dark:text-amber-200">
-            Update Due (Syncing...)
+            Syncing Live Data...
           </strong>
         </span>
       ) : (
