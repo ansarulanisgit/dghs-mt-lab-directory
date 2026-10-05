@@ -589,7 +589,7 @@ export default function SettingsModal({ currentUser, onClose, onForceUpdate, dyn
                 }`}
               >
                 <FileText className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                <span>PDF Columns</span>
+                <span>PDF Export & Columns</span>
                 <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200 border border-transparent dark:border-emerald-700">
                   {pdfConfig.selectedColumns?.length || 0}
                 </span>
@@ -710,6 +710,18 @@ export default function SettingsModal({ currentUser, onClose, onForceUpdate, dyn
                           placeholder="DGHS Employee Directory - Developed By Ansarul Anis"
                           className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white dark:focus:bg-slate-800 dark:text-slate-100 font-medium"
                         />
+                        <div className="mt-2 flex items-center justify-between p-2.5 rounded-xl bg-emerald-50/70 dark:bg-emerald-950/40 border border-emerald-200/80 dark:border-emerald-800/70 text-[11px]">
+                          <span className="text-slate-600 dark:text-slate-300 font-medium">
+                            Looking to show/hide or customize the <strong>Exported PDF Header, Source & Footer</strong> text?
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setActiveTab('pdf')}
+                            className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold transition-colors cursor-pointer shrink-0 ml-2"
+                          >
+                            Customize PDF Header & Footer →
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1022,15 +1034,379 @@ export default function SettingsModal({ currentUser, onClose, onForceUpdate, dyn
                 </div>
               )}
 
-              {/* TAB: PDF COLUMN SETTINGS (Super Admin & Admin) */}
+              {/* TAB: PDF EXPORT & COLUMN SETTINGS (Super Admin & Admin) */}
               {activeTab === 'pdf' && (
-                <div className="space-y-4">
+                <div className="space-y-5">
                   {pdfSavedNotice && (
                     <div className="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 text-xs font-semibold flex items-center gap-2 animate-in fade-in">
                       <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
                       <span>{pdfSavedNotice}</span>
                     </div>
                   )}
+
+                  {/* PDF HEADER & FOOTER CUSTOMIZATION CARD */}
+                  <div className="p-4 sm:p-5 bg-gradient-to-br from-slate-50 via-white to-emerald-50/30 dark:from-slate-800/80 dark:via-slate-900 dark:to-emerald-950/20 border border-slate-200 dark:border-slate-700 rounded-2xl space-y-4 shadow-xs">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200/80 dark:border-slate-700 pb-3">
+                      <div>
+                        <h4 className="font-extrabold text-slate-900 dark:text-slate-100 text-sm flex items-center gap-2">
+                          <Edit2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                          Exported PDF Header & Footer Customization
+                        </h4>
+                        <p className="text-slate-500 dark:text-slate-400 text-xs mt-0.5">
+                          Show, hide, or customize the header title, source attribution, and footer text on exported PDF pages.
+                        </p>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-1.5 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => setPdfConfig(prev => ({
+                            ...prev,
+                            showHeaderTitle: true,
+                            showRecordCount: true,
+                            showHeaderSource: true,
+                            showGeneratedDate: true,
+                            showFooterText: true,
+                            showPageNumbers: true
+                          }))}
+                          className="px-2.5 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 font-bold text-[11px] flex items-center gap-1 transition-colors cursor-pointer"
+                        >
+                          <Eye className="w-3 h-3" />
+                          <span>Show All</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setPdfConfig(prev => ({
+                            ...prev,
+                            showHeaderTitle: false,
+                            showRecordCount: false,
+                            showHeaderSource: false,
+                            showGeneratedDate: false,
+                            showFooterText: false,
+                            showPageNumbers: false
+                          }))}
+                          className="px-2.5 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 font-bold text-[11px] flex items-center gap-1 transition-colors cursor-pointer"
+                        >
+                          <EyeOff className="w-3 h-3" />
+                          <span>Hide All</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleSavePdfConfig}
+                          className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] flex items-center gap-1 shadow-xs transition-colors cursor-pointer"
+                        >
+                          <Save className="w-3 h-3" />
+                          <span>Save PDF Settings</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                      {/* 1. HEADER TITLE & SOURCE SETTINGS */}
+                      <div className="p-3.5 rounded-xl bg-white dark:bg-slate-800/70 border border-slate-200/90 dark:border-slate-700 space-y-3.5">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-xs font-extrabold text-emerald-800 dark:text-emerald-300 uppercase tracking-wider">
+                            1. PDF Header Title & Source
+                          </span>
+                        </div>
+
+                        {/* Header Main Title Toggle + Input */}
+                        <div className="space-y-1.5">
+                          <div className="flex items-center justify-between gap-2">
+                            <label className="text-xs font-semibold text-slate-700 dark:text-slate-200">
+                              Header Title Text
+                            </label>
+                            <div className="inline-flex items-center rounded-lg bg-slate-100 dark:bg-slate-900 p-0.5 border border-slate-200 dark:border-slate-700">
+                              <button
+                                type="button"
+                                onClick={() => setPdfConfig(prev => ({ ...prev, showHeaderTitle: true }))}
+                                className={`px-2 py-0.5 rounded-md text-[10px] font-bold transition-colors cursor-pointer ${
+                                  pdfConfig.showHeaderTitle !== false
+                                    ? 'bg-emerald-600 text-white shadow-2xs'
+                                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+                                }`}
+                              >
+                                Show
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setPdfConfig(prev => ({ ...prev, showHeaderTitle: false }))}
+                                className={`px-2 py-0.5 rounded-md text-[10px] font-bold transition-colors cursor-pointer ${
+                                  pdfConfig.showHeaderTitle === false
+                                    ? 'bg-slate-700 text-white shadow-2xs'
+                                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+                                }`}
+                              >
+                                Hide
+                              </button>
+                            </div>
+                          </div>
+                          <input
+                            type="text"
+                            disabled={pdfConfig.showHeaderTitle === false}
+                            value={pdfConfig.headerTitleText !== undefined ? pdfConfig.headerTitleText : 'DGHS DIRECTORY'}
+                            onChange={(e) => setPdfConfig(prev => ({ ...prev, headerTitleText: e.target.value }))}
+                            placeholder="DGHS DIRECTORY"
+                            className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-50"
+                          />
+                          <label className="flex items-center gap-2 pt-0.5 cursor-pointer select-none">
+                            <input
+                              type="checkbox"
+                              disabled={pdfConfig.showHeaderTitle === false}
+                              checked={pdfConfig.appendFilterScopeToTitle !== false}
+                              onChange={(e) => setPdfConfig(prev => ({ ...prev, appendFilterScopeToTitle: e.target.checked }))}
+                              className="w-3.5 h-3.5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 accent-emerald-600 cursor-pointer"
+                            />
+                            <span className="text-[11px] text-slate-600 dark:text-slate-400">
+                              Auto-append active discipline & division/district scope (e.g. <code className="text-[10px] bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded">— LABORATORY MEDICINE (RAJSHAHI DIVISION)</code>)
+                            </span>
+                          </label>
+                        </div>
+
+                        {/* Header Source Attribution Toggle + Input */}
+                        <div className="space-y-1.5 pt-2.5 border-t border-slate-100 dark:border-slate-700/70">
+                          <div className="flex items-center justify-between gap-2">
+                            <label className="text-xs font-semibold text-slate-700 dark:text-slate-200">
+                              Header Source Text
+                            </label>
+                            <div className="inline-flex items-center rounded-lg bg-slate-100 dark:bg-slate-900 p-0.5 border border-slate-200 dark:border-slate-700">
+                              <button
+                                type="button"
+                                onClick={() => setPdfConfig(prev => ({ ...prev, showHeaderSource: true }))}
+                                className={`px-2 py-0.5 rounded-md text-[10px] font-bold transition-colors cursor-pointer ${
+                                  pdfConfig.showHeaderSource !== false
+                                    ? 'bg-emerald-600 text-white shadow-2xs'
+                                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+                                }`}
+                              >
+                                Show
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setPdfConfig(prev => ({ ...prev, showHeaderSource: false }))}
+                                className={`px-2 py-0.5 rounded-md text-[10px] font-bold transition-colors cursor-pointer ${
+                                  pdfConfig.showHeaderSource === false
+                                    ? 'bg-slate-700 text-white shadow-2xs'
+                                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+                                }`}
+                              >
+                                Hide
+                              </button>
+                            </div>
+                          </div>
+                          <input
+                            type="text"
+                            disabled={pdfConfig.showHeaderSource === false}
+                            value={pdfConfig.headerSourceText !== undefined ? pdfConfig.headerSourceText : 'Source: DGHS Human Resource Management System (HRIS)'}
+                            onChange={(e) => setPdfConfig(prev => ({ ...prev, headerSourceText: e.target.value }))}
+                            placeholder="Source: DGHS Human Resource Management System (HRIS)"
+                            className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-50"
+                          />
+                        </div>
+
+                        {/* Additional Header Metadata Toggles (Record Count & Generated Date) */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2 border-t border-slate-100 dark:border-slate-700/70">
+                          <div className="flex items-center justify-between p-2 rounded-lg bg-slate-50 dark:bg-slate-900/60 border border-slate-200/70 dark:border-slate-700/80">
+                            <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-300">
+                              Total Record Count
+                            </span>
+                            <div className="inline-flex items-center rounded-md bg-white dark:bg-slate-800 p-0.5 border border-slate-200 dark:border-slate-700">
+                              <button
+                                type="button"
+                                onClick={() => setPdfConfig(prev => ({ ...prev, showRecordCount: true }))}
+                                className={`px-1.5 py-0.5 rounded text-[10px] font-bold cursor-pointer ${
+                                  pdfConfig.showRecordCount !== false ? 'bg-emerald-600 text-white' : 'text-slate-500'
+                                }`}
+                              >
+                                Show
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setPdfConfig(prev => ({ ...prev, showRecordCount: false }))}
+                                className={`px-1.5 py-0.5 rounded text-[10px] font-bold cursor-pointer ${
+                                  pdfConfig.showRecordCount === false ? 'bg-slate-700 text-white' : 'text-slate-500'
+                                }`}
+                              >
+                                Hide
+                              </button>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center justify-between p-2 rounded-lg bg-slate-50 dark:bg-slate-900/60 border border-slate-200/70 dark:border-slate-700/80">
+                            <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-300">
+                              Generated Date
+                            </span>
+                            <div className="inline-flex items-center rounded-md bg-white dark:bg-slate-800 p-0.5 border border-slate-200 dark:border-slate-700">
+                              <button
+                                type="button"
+                                onClick={() => setPdfConfig(prev => ({ ...prev, showGeneratedDate: true }))}
+                                className={`px-1.5 py-0.5 rounded text-[10px] font-bold cursor-pointer ${
+                                  pdfConfig.showGeneratedDate !== false ? 'bg-emerald-600 text-white' : 'text-slate-500'
+                                }`}
+                              >
+                                Show
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setPdfConfig(prev => ({ ...prev, showGeneratedDate: false }))}
+                                className={`px-1.5 py-0.5 rounded text-[10px] font-bold cursor-pointer ${
+                                  pdfConfig.showGeneratedDate === false ? 'bg-slate-700 text-white' : 'text-slate-500'
+                                }`}
+                              >
+                                Hide
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* 2. FOOTER TEXT & LIVE PREVIEW */}
+                      <div className="p-3.5 rounded-xl bg-white dark:bg-slate-800/70 border border-slate-200/90 dark:border-slate-700 flex flex-col justify-between space-y-3.5">
+                        <div className="space-y-3.5">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-xs font-extrabold text-emerald-800 dark:text-emerald-300 uppercase tracking-wider">
+                              2. PDF Footer Text & Page Number
+                            </span>
+                          </div>
+
+                          {/* Footer Text Toggle + Input */}
+                          <div className="space-y-1.5">
+                            <div className="flex items-center justify-between gap-2">
+                              <label className="text-xs font-semibold text-slate-700 dark:text-slate-200">
+                                Left Footer Attribution Text
+                              </label>
+                              <div className="inline-flex items-center rounded-lg bg-slate-100 dark:bg-slate-900 p-0.5 border border-slate-200 dark:border-slate-700">
+                                <button
+                                  type="button"
+                                  onClick={() => setPdfConfig(prev => ({ ...prev, showFooterText: true }))}
+                                  className={`px-2 py-0.5 rounded-md text-[10px] font-bold transition-colors cursor-pointer ${
+                                    pdfConfig.showFooterText !== false
+                                      ? 'bg-emerald-600 text-white shadow-2xs'
+                                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+                                  }`}
+                                >
+                                  Show
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setPdfConfig(prev => ({ ...prev, showFooterText: false }))}
+                                  className={`px-2 py-0.5 rounded-md text-[10px] font-bold transition-colors cursor-pointer ${
+                                    pdfConfig.showFooterText === false
+                                      ? 'bg-slate-700 text-white shadow-2xs'
+                                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+                                  }`}
+                                >
+                                  Hide
+                                </button>
+                              </div>
+                            </div>
+                            <input
+                              type="text"
+                              disabled={pdfConfig.showFooterText === false}
+                              value={pdfConfig.footerText !== undefined ? pdfConfig.footerText : 'DGHS Employee Directory - Developed By Ansarul Anis'}
+                              onChange={(e) => setPdfConfig(prev => ({ ...prev, footerText: e.target.value }))}
+                              placeholder="DGHS Employee Directory - Developed By Ansarul Anis"
+                              className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-50"
+                            />
+                          </div>
+
+                          {/* Page Numbers Toggle */}
+                          <div className="flex items-center justify-between p-2 rounded-lg bg-slate-50 dark:bg-slate-900/60 border border-slate-200/70 dark:border-slate-700/80">
+                            <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-300">
+                              Right Footer Page Numbers (<code className="text-[10px]">Page 1, 2...</code>)
+                            </span>
+                            <div className="inline-flex items-center rounded-md bg-white dark:bg-slate-800 p-0.5 border border-slate-200 dark:border-slate-700">
+                              <button
+                                type="button"
+                                onClick={() => setPdfConfig(prev => ({ ...prev, showPageNumbers: true }))}
+                                className={`px-1.5 py-0.5 rounded text-[10px] font-bold cursor-pointer ${
+                                  pdfConfig.showPageNumbers !== false ? 'bg-emerald-600 text-white' : 'text-slate-500'
+                                }`}
+                              >
+                                Show
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setPdfConfig(prev => ({ ...prev, showPageNumbers: false }))}
+                                className={`px-1.5 py-0.5 rounded text-[10px] font-bold cursor-pointer ${
+                                  pdfConfig.showPageNumbers === false ? 'bg-slate-700 text-white' : 'text-slate-500'
+                                }`}
+                              >
+                                Hide
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Live Visual Preview of Exported PDF Header & Footer */}
+                        <div className="p-3 rounded-xl bg-white text-slate-800 border border-slate-300 shadow-2xs space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
+                              Live PDF Page Header & Footer Preview
+                            </span>
+                          </div>
+
+                          {/* Simulated PDF Header */}
+                          {(pdfConfig.showHeaderTitle !== false || pdfConfig.showRecordCount !== false || pdfConfig.showHeaderSource !== false || pdfConfig.showGeneratedDate !== false) ? (
+                            <div className="pb-1.5 border-b border-slate-200 space-y-0.5">
+                              {pdfConfig.showHeaderTitle !== false && (
+                                <div className="text-[11px] font-extrabold text-[#065f46] truncate">
+                                  {(() => {
+                                    const base = (pdfConfig.headerTitleText !== undefined ? pdfConfig.headerTitleText : 'DGHS DIRECTORY').trim();
+                                    if (pdfConfig.appendFilterScopeToTitle !== false) {
+                                      return `${base || 'DGHS DIRECTORY'} — LABORATORY MEDICINE (ALL BANGLADESH)`;
+                                    }
+                                    return base || 'DGHS DIRECTORY';
+                                  })()}
+                                </div>
+                              )}
+                              {(pdfConfig.showRecordCount !== false || pdfConfig.showHeaderSource !== false || pdfConfig.showGeneratedDate !== false) && (
+                                <div className="flex items-center justify-between gap-2 text-[9px] text-slate-500">
+                                  <span className="truncate">
+                                    {[
+                                      pdfConfig.showRecordCount !== false ? 'Total Filtered Records: 322' : null,
+                                      pdfConfig.showHeaderSource !== false ? (pdfConfig.headerSourceText !== undefined ? pdfConfig.headerSourceText : 'Source: DGHS Human Resource Management System (HRIS)') : null
+                                    ].filter(Boolean).join(' | ')}
+                                  </span>
+                                  {pdfConfig.showGeneratedDate !== false && (
+                                    <span className="shrink-0">Generated: {new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="py-1 text-[10px] italic text-slate-400 text-center border-b border-dashed border-slate-200">
+                              [PDF Header Hidden]
+                            </div>
+                          )}
+
+                          {/* Simulated Mini Table Strip */}
+                          <div className="bg-[#065f46] text-white text-[8px] font-bold px-2 py-0.5 rounded-xs flex justify-between">
+                            <span>SL | POST ID | NAME | DESIGNATION</span>
+                            <span>STATUS | PRL DATE</span>
+                          </div>
+
+                          {/* Simulated PDF Footer */}
+                          {(pdfConfig.showFooterText !== false || pdfConfig.showPageNumbers !== false) ? (
+                            <div className="pt-1 border-t border-slate-200 flex items-center justify-between gap-2 text-[9px] text-slate-500">
+                              <span className="truncate">
+                                {pdfConfig.showFooterText !== false
+                                  ? (pdfConfig.footerText !== undefined ? pdfConfig.footerText : 'DGHS Employee Directory - Developed By Ansarul Anis')
+                                  : ''}
+                              </span>
+                              {pdfConfig.showPageNumbers !== false && (
+                                <span className="shrink-0">Page 1</span>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="pt-1 text-[10px] italic text-slate-400 text-center border-t border-dashed border-slate-200">
+                              [PDF Footer Hidden]
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
 
                   <div className="p-4 bg-gradient-to-r from-emerald-50 via-teal-50 to-slate-50 dark:from-emerald-950/40 dark:via-teal-950/30 dark:to-slate-900 border border-emerald-200/70 dark:border-emerald-800/60 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
                     <div>
@@ -1184,17 +1560,17 @@ export default function SettingsModal({ currentUser, onClose, onForceUpdate, dyn
                     <div className="flex items-center gap-2">
                       <button
                         type="button"
-                        onClick={() => setPdfConfig({ selectedColumns: AVAILABLE_PDF_COLUMNS.map(c => c.id) })}
+                        onClick={() => setPdfConfig(prev => ({ ...prev, selectedColumns: AVAILABLE_PDF_COLUMNS.map(c => c.id) }))}
                         className="px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-emerald-300 dark:hover:border-emerald-500 hover:text-emerald-700 dark:hover:text-emerald-400 text-slate-700 dark:text-slate-300 font-semibold transition-colors cursor-pointer text-[11px]"
                       >
-                        Select All
+                        Select All Columns
                       </button>
                       <button
                         type="button"
-                        onClick={() => setPdfConfig({ selectedColumns: ['sl', 'post_id', 'name', 'designation', 'status', 'hris_id', 'contact_no', 'institute', 'prl_date'] })}
+                        onClick={() => setPdfConfig(prev => ({ ...prev, selectedColumns: ['sl', 'post_id', 'name', 'designation', 'status', 'hris_id', 'contact_no', 'institute', 'prl_date'] }))}
                         className="px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-emerald-300 dark:hover:border-emerald-500 hover:text-emerald-700 dark:hover:text-emerald-400 text-slate-700 dark:text-slate-300 font-semibold transition-colors cursor-pointer text-[11px]"
                       >
-                        Standard Default
+                        Standard Default Columns
                       </button>
                     </div>
 

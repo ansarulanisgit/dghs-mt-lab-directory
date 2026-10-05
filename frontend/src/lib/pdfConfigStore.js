@@ -23,7 +23,17 @@ export const DEFAULT_COLUMN_ORDER = [
 
 export const DEFAULT_PDF_CONFIG = {
   selectedColumns: ['sl', 'post_id', 'name', 'designation', 'status', 'hris_id', 'contact_no', 'institute', 'prl_date'],
-  columnOrder: ['sl', 'post_id', 'name', 'designation', 'status', 'hris_id', 'contact_no', 'nid', 'address', 'institute', 'prl_date']
+  columnOrder: ['sl', 'post_id', 'name', 'designation', 'status', 'hris_id', 'contact_no', 'nid', 'address', 'institute', 'prl_date'],
+  showHeaderTitle: true,
+  headerTitleText: 'DGHS DIRECTORY',
+  appendFilterScopeToTitle: true,
+  showRecordCount: true,
+  showHeaderSource: true,
+  headerSourceText: 'Source: DGHS Human Resource Management System (HRIS)',
+  showGeneratedDate: true,
+  showFooterText: true,
+  footerText: 'DGHS Employee Directory - Developed By Ansarul Anis',
+  showPageNumbers: true
 };
 
 const STORAGE_PDF_CONFIG_KEY = 'dghs_pdf_column_config_v2';

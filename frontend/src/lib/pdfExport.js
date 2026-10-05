@@ -132,17 +132,62 @@ export async function exportFilteredStaffPDF(staffList, filterContext = {}) {
     scopeTitle = `${upazila.toUpperCase()}, ${scopeTitle}`;
   }
 
-  let groupTitle = 'DGHS EMPLOYEE DIRECTORY';
-  if (designations && designations.length > 0) {
-    groupTitle = `DGHS DIRECTORY — ${designations.join(', ').toUpperCase()}`;
-  } else if (activeDisciplines && activeDisciplines.length > 0) {
-    groupTitle = `DGHS DIRECTORY — ${activeDisciplines.join(', ').toUpperCase()}`;
-  } else if (designationGroups && designationGroups.length > 0) {
-    groupTitle = `DGHS DIRECTORY — ${designationGroups.join(', ').toUpperCase()}`;
+  const baseHeaderTitle = (currentConfig.headerTitleText !== undefined && currentConfig.headerTitleText !== null)
+    ? String(currentConfig.headerTitleText).trim()
+    : 'DGHS DIRECTORY';
+
+  const appendScope = currentConfig.appendFilterScopeToTitle !== false;
+
+  let mainTitle = baseHeaderTitle;
+  if (appendScope) {
+    let filterSuffix = '';
+    if (designations && designations.length > 0) {
+      filterSuffix = designations.join(', ').toUpperCase();
+    } else if (activeDisciplines && activeDisciplines.length > 0) {
+      filterSuffix = activeDisciplines.join(', ').toUpperCase();
+    } else if (designationGroups && designationGroups.length > 0) {
+      filterSuffix = designationGroups.join(', ').toUpperCase();
+    }
+
+    if (filterSuffix) {
+      mainTitle = baseHeaderTitle ? `${baseHeaderTitle} — ${filterSuffix} (${scopeTitle})` : `${filterSuffix} (${scopeTitle})`;
+    } else {
+      const effectiveBase = baseHeaderTitle === 'DGHS DIRECTORY' ? 'DGHS EMPLOYEE DIRECTORY' : baseHeaderTitle;
+      mainTitle = effectiveBase ? `${effectiveBase} (${scopeTitle})` : `(${scopeTitle})`;
+    }
   }
 
-  const mainTitle = `${groupTitle} (${scopeTitle})`;
-  const subTitle = `Total Filtered Records: ${staffList.length} | Source: DGHS Human Resource Management System (HRIS)`;
+  const showHeaderTitle = currentConfig.showHeaderTitle !== false && Boolean(mainTitle.trim());
+  const showRecordCount = currentConfig.showRecordCount !== false;
+  const showHeaderSource = currentConfig.showHeaderSource !== false;
+  const customSourceText = (currentConfig.headerSourceText !== undefined && currentConfig.headerSourceText !== null)
+    ? String(currentConfig.headerSourceText).trim()
+    : 'Source: DGHS Human Resource Management System (HRIS)';
+
+  const subTitleParts = [];
+  if (showRecordCount) {
+    subTitleParts.push(`Total Filtered Records: ${staffList.length}`);
+  }
+  if (showHeaderSource && customSourceText) {
+    subTitleParts.push(customSourceText);
+  }
+  const subTitle = subTitleParts.join(' | ');
+  const showSubTitle = subTitleParts.length > 0;
+  const showGeneratedDate = currentConfig.showGeneratedDate !== false;
+
+  const customFooterText = (currentConfig.footerText !== undefined && currentConfig.footerText !== null)
+    ? String(currentConfig.footerText).trim()
+    : 'DGHS Employee Directory - Developed By Ansarul Anis';
+  const showFooterText = currentConfig.showFooterText !== false && Boolean(customFooterText);
+  const showPageNumbers = currentConfig.showPageNumbers !== false;
+
+  const hasSubRow = showSubTitle || showGeneratedDate;
+  const hasAnyHeader = showHeaderTitle || hasSubRow;
+  const hasAnyFooter = showFooterText || showPageNumbers;
+
+  const topMargin = !hasAnyHeader ? 22 : (showHeaderTitle && hasSubRow ? 60 : 44);
+  const startY = !hasAnyHeader ? 22 : (showHeaderTitle && hasSubRow ? 58 : 42);
+  const bottomMargin = hasAnyFooter ? 35 : 20;
 
   // Prepare table headers
   const tableHeaders = effectiveColumns.map(col => col.label);
@@ -181,8 +226,8 @@ export async function exportFilteredStaffPDF(staffList, filterContext = {}) {
   autoTable(doc, {
     head: [tableHeaders],
     body: tableData,
-    startY: 58,
-    margin: { top: 60, bottom: 35, left: 20, right: 20 },
+    startY,
+    margin: { top: topMargin, bottom: bottomMargin, left: 20, right: 20 },
     theme: 'grid',
     styles: {
       fontSize: 8,
@@ -209,36 +254,51 @@ export async function exportFilteredStaffPDF(staffList, filterContext = {}) {
       const pageHeight = doc.internal.pageSize.height || doc.internal.pageSize.getHeight();
       const pageNumber = data.pageNumber;
 
-      // Top Title Text (Clean Emerald Text on White Background)
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(12);
-      doc.setTextColor(6, 95, 70); // Deep Emerald text
-      doc.text(mainTitle, 20, 24);
+      // Render Header if enabled
+      if (hasAnyHeader) {
+        if (showHeaderTitle) {
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(12);
+          doc.setTextColor(6, 95, 70); // Deep Emerald text
+          doc.text(mainTitle, 20, 24);
+        }
 
-      // Subtitle & Metadata
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(8);
-      doc.setTextColor(100, 116, 139); // Slate-500
-      doc.text(subTitle, 20, 38);
+        const subRowY = showHeaderTitle ? 38 : 24;
 
-      // Generated Date on Top Right
-      doc.setFontSize(8);
-      doc.setTextColor(100, 116, 139);
-      doc.text(`Generated: ${dateStr}`, pageWidth - 20, 38, { align: 'right' });
+        if (showSubTitle) {
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(8);
+          doc.setTextColor(100, 116, 139); // Slate-500
+          doc.text(subTitle, 20, subRowY);
+        }
 
-      // Header Separator Line
-      doc.setDrawColor(226, 232, 240); // Slate-200
-      doc.line(20, 46, pageWidth - 20, 46);
+        if (showGeneratedDate) {
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(8);
+          doc.setTextColor(100, 116, 139);
+          doc.text(`Generated: ${dateStr}`, pageWidth - 20, subRowY, { align: 'right' });
+        }
 
-      // Footer
-      doc.setDrawColor(226, 232, 240);
-      doc.line(20, pageHeight - 22, pageWidth - 20, pageHeight - 22);
+        const lineY = (showHeaderTitle && hasSubRow) ? 46 : 32;
+        doc.setDrawColor(226, 232, 240); // Slate-200
+        doc.line(20, lineY, pageWidth - 20, lineY);
+      }
 
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(7.5);
-      doc.setTextColor(100, 116, 139);
-      doc.text('DGHS Employee Directory - Developed By Ansarul Anis', 20, pageHeight - 10);
-      doc.text(`Page ${pageNumber}`, pageWidth - 20, pageHeight - 10, { align: 'right' });
+      // Render Footer if enabled
+      if (hasAnyFooter) {
+        doc.setDrawColor(226, 232, 240);
+        doc.line(20, pageHeight - 22, pageWidth - 20, pageHeight - 22);
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(7.5);
+        doc.setTextColor(100, 116, 139);
+        if (showFooterText) {
+          doc.text(customFooterText, 20, pageHeight - 10);
+        }
+        if (showPageNumbers) {
+          doc.text(`Page ${pageNumber}`, pageWidth - 20, pageHeight - 10, { align: 'right' });
+        }
+      }
     }
   });
 
