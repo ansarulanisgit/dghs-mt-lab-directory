@@ -252,19 +252,9 @@ export async function runScraper(options = {}) {
       recordsByPostId.set(postId, record);
     }
 
-    // Deduplicate and lock to 10,027 posts
+    // Deduplicate unique sanctioned posts
     const uniqueRecords = Array.from(recordsByPostId.values());
-    let finalRecords = uniqueRecords;
-    if (uniqueRecords.length > 10027) {
-      finalRecords = uniqueRecords.slice(0, 10027);
-    } else if (uniqueRecords.length < 10027) {
-      const diff = 10027 - uniqueRecords.length;
-      const padding = Array.from(recordsByPostId.values()).slice(0, diff).map((r, i) => ({
-        ...r,
-        id: `post-${r.post_id}-pad-${i}`
-      }));
-      finalRecords = [...uniqueRecords, ...padding];
-    }
+    const finalRecords = uniqueRecords;
 
     // Save and rotate local backups (up to 5 versions)
     const recordsPath = path.join(__dirname, 'scraped_records.json');

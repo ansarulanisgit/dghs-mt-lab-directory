@@ -177,9 +177,11 @@ function computeTierRank(f) {
     f.includes('district hospital') ||
     f.includes('general hospital') ||
     f.includes('sadar hospital') ||
+    f.includes('500 bed') ||
+    f.includes('400 bed') ||
+    f.includes('300 bed') ||
     f.includes('250 bed') ||
     f.includes('100 bed') ||
-    f.includes('500 bed') ||
     f.includes('police hospital') ||
     f.includes('jail hospital')
   ) {
@@ -198,7 +200,11 @@ function computeTierRank(f) {
     f.includes('31 bed') ||
     f.includes('20 bed') ||
     f.includes('10 bed') ||
-    f.includes('upazila hospital')
+    f.includes('upazila hospital') ||
+    f.includes('trauma center') ||
+    f.includes('trauma centre') ||
+    f.includes('emergency center') ||
+    f.includes('emergency centre')
   ) {
     return 7;
   }
